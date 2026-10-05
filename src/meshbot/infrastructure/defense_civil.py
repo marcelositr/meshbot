@@ -115,7 +115,7 @@ class DefenseCivilAlertService:
         description = cls._find_text(info, "description")
         expires = cls._find_text(info, "expires", required=False)
 
-        if not event or not area:
+        if not event or not severity or not area:
             return None
 
         return DefenseCivilAlert(
