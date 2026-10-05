@@ -4,8 +4,16 @@ from dataclasses import dataclass
 
 
 @dataclass(frozen=True, slots=True)
-class Message:
-    """A message received from or sent to a node."""
+class IncomingMessage:
+    """A message received from a node."""
 
-    node_id: str
+    sender_id: str
+    text: str
+
+
+@dataclass(frozen=True, slots=True)
+class OutgoingMessage:
+    """A message sent to a destination node."""
+
+    recipient_id: str
     text: str
