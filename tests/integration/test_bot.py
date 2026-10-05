@@ -28,7 +28,7 @@ class InMemoryUsers:
 def make_bot(repository: InMemoryUsers) -> tuple[MeshBot, SimulatorTransport]:
     transport = SimulatorTransport()
     user_service = UserService(repository)
-    handler = CommandHandler([RegisterCommand(user_service), NameCommand(user_service), PingCommand()])
+    handler = CommandHandler(\n        [RegisterCommand(user_service), NameCommand(user_service), PingCommand()]\n    )
     bot = MeshBot(transport, handler, authorization=AuthorizationPolicy(repository))
     return bot, transport
 
@@ -47,11 +47,11 @@ def test_unregistered_user_can_register_and_then_use_commands() -> None:
     bot, transport = make_bot(repository)
     transport.inject_message("!12345678", "!registrar")
     assert bot.process_next_message() is True
-    assert transport.sent_messages == [OutgoingMessage(recipient_id="!12345678", text="Cadastro realizado.")]
+    assert transport.sent_messages == [\n        OutgoingMessage(recipient_id="!12345678", text="Cadastro realizado.")\n    ]
     transport.sent_messages.clear()
     transport.inject_message("!12345678", "!nome João da Silva")
     assert bot.process_next_message() is True
-    assert transport.sent_messages == [OutgoingMessage(recipient_id="!12345678", text="Seu nome agora é João da Silva.")]
+    assert transport.sent_messages == [\n        OutgoingMessage(\n            recipient_id="!12345678", text="Seu nome agora é João da Silva."\n        )\n    ]
     transport.sent_messages.clear()
     transport.inject_message("!12345678", "!ping")
     assert bot.process_next_message() is True
