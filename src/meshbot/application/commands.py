@@ -115,7 +115,7 @@ class TempoCommand:
             return (
                 OutgoingMessage(
                     recipient_id=message.sender_id,
-                    text=f'Não encontrei "{city}". Use !tempo ibge <codigo>.',
+                    text="Cidade não encontrada.",
                 ),
             )
         except AmbiguousCityError as exc:
@@ -134,26 +134,26 @@ class TempoCommand:
             return (
                 OutgoingMessage(
                     recipient_id=message.sender_id,
-                    text="Serviço de previsão indisponível no momento.",
+                    text="Tempo indisponível.",
                 ),
             )
 
         return (
             OutgoingMessage(
                 recipient_id=message.sender_id,
-                text=f"{forecast.city}: {forecast.summary}",
+                text=f"{forecast.city}: {forecast.summary.split(",")[0][:30]}",
             ),
             OutgoingMessage(
                 recipient_id=message.sender_id,
-                text=f"Temperatura: {forecast.temperature_min}°C a {forecast.temperature_max}°C",
+                text=f"Temp: {forecast.temperature_min}-{forecast.temperature_max}°C",
             ),
             OutgoingMessage(
                 recipient_id=message.sender_id,
-                text=f"Umidade: {forecast.humidity_min}% a {forecast.humidity_max}%",
+                text=f"Umid: {forecast.humidity_min}-{forecast.humidity_max}%",
             ),
             OutgoingMessage(
                 recipient_id=message.sender_id,
-                text=f"Vento: {forecast.wind_direction}, {forecast.wind_intensity}",
+                text=f"Vento: {forecast.wind_direction} {forecast.wind_intensity}",
             ),
         )
 
