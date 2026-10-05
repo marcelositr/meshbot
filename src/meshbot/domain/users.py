@@ -11,7 +11,7 @@ DEFAULT_USER_NAME = "Sem nome"
 
 def normalize_user_name(value: str) -> str:
     """Normalize and validate a registered user's display name."""
-    value = " ".join(value.strip().split())
+    value = unicodedata.normalize("NFC", " ".join(value.strip().split()))
 
     if not value:
         raise ValueError("name must not be empty.")
