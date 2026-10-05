@@ -22,6 +22,10 @@ class WeatherServiceError(RuntimeError):
     """Base error for weather service failures."""
 
 
+class WeatherServiceUnavailableError(WeatherServiceError):
+    """Raised when an external weather dependency cannot be reached."""
+
+
 class CityNotFoundError(WeatherServiceError):
     """Raised when a city cannot be resolved."""
 
