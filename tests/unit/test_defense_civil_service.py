@@ -46,3 +46,10 @@ def test_defense_civil_parses_namespaced_cap_info() -> None:
         description="Evite áreas de risco.",
         expires="2026-10-05T23:00:00-03:00",
     )
+
+def test_defense_civil_rejects_expired_alert() -> None:
+    assert not DefenseCivilAlertService._is_active("2020-01-01T00:00:00+00:00")
+
+
+def test_defense_civil_accepts_future_alert() -> None:
+    assert DefenseCivilAlertService._is_active("2099-01-01T00:00:00+00:00")
