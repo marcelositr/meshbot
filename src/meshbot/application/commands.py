@@ -137,19 +137,19 @@ class TempoCommand:
         return (
             OutgoingMessage(
                 recipient_id=message.sender_id,
-                text=f"{forecast.city}: {forecast.summary.split(',')[0][:30]}",
+                text=f"{forecast.city}: {forecast.summary}",
             ),
             OutgoingMessage(
                 recipient_id=message.sender_id,
-                text=f"Temp: {forecast.temperature_min}-{forecast.temperature_max}°C",
+                text=f"Temperatura: {forecast.temperature_min}°C a {forecast.temperature_max}°C",
             ),
             OutgoingMessage(
                 recipient_id=message.sender_id,
-                text=f"Umid: {forecast.humidity_min}-{forecast.humidity_max}%",
+                text=f"Umidade: {forecast.humidity_min}% a {forecast.humidity_max}%",
             ),
             OutgoingMessage(
                 recipient_id=message.sender_id,
-                text=f"Vento: {forecast.wind_direction} {forecast.wind_intensity}",
+                text=f"Vento: {forecast.wind_direction}, {forecast.wind_intensity}",
             ),
         )
 
