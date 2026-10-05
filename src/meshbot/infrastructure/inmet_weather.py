@@ -216,7 +216,44 @@ def _extract_uf(data: dict[str, Any]) -> str:
             if isinstance(uf, dict) and isinstance(uf.get("sigla"), str):
                 return uf["sigla"]
 
+    code = int(data["id"])
+    uf_code = code // 100_000
+    uf = _UF_BY_IBGE_CODE.get(uf_code)
+    if uf is not None:
+        return uf
+
     raise ValueError("IBGE municipality response does not contain a UF.")
+
+
+_UF_BY_IBGE_CODE = {
+    11: "RO",
+    12: "AC",
+    13: "AM",
+    14: "RR",
+    15: "PA",
+    16: "AP",
+    17: "TO",
+    21: "MA",
+    22: "PI",
+    23: "CE",
+    24: "RN",
+    25: "PB",
+    26: "PE",
+    27: "AL",
+    28: "SE",
+    29: "BA",
+    31: "MG",
+    32: "ES",
+    33: "RJ",
+    35: "SP",
+    41: "PR",
+    42: "SC",
+    43: "RS",
+    50: "MS",
+    51: "MT",
+    52: "GO",
+    53: "DF",
+}
 
 
 def _parse_time(value: str) -> time:
