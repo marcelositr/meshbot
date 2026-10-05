@@ -2,6 +2,12 @@
 
 from typing import Protocol
 
+from meshbot.application.defense_civil import (
+    DefenseCivilAmbiguousCityError,
+    DefenseCivilCityNotFoundError,
+    DefenseCivilService,
+    DefenseCivilServiceUnavailableError,
+)
 from meshbot.application.moderation import ModerationService
 from meshbot.application.moderation_notifications import ModerationNotifier
 from meshbot.application.users import UserService
@@ -166,6 +172,80 @@ class TempoCommand:
                 text=f"Vento: {forecast.wind_direction}, {forecast.wind_intensity}",
             ),
         )
+
+
+class DefenseCivilCommand:
+    """Return active Defense Civil alerts for a requested city."""
+
+    name = "defesacivil"
+
+    def __init__(self, service: DefenseCivilService) -> None:
+        self._service = service
+
+    def execute(self, message: IncomingMessage) -> tuple[OutgoingMessage, ...]:
+        """Resolve the requested city and return active alerts."""
+        parts = message.text.strip().split(maxsplit=1)
+        location = parts[1].strip() if len(parts) == 2 else ""
+
+        if not location:
+            return (
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
+                    text="Use: !defesacivil <cidade>.",
+                ),
+            )
+
+        try:
+            alerts = self._service.get_alerts(location)
+        except DefenseCivilCityNotFoundError:
+            return (
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
+                    text="Cidade não encontrada.",
+                ),
+            )
+        except DefenseCivilAmbiguousCityError:
+            return (
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
+                    text="Informe a cidade e o estado.",
+                ),
+            )
+        except DefenseCivilServiceUnavailableError:
+            return (
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
+                    text="Não consegui consultar os alertas.",
+                ),
+            )
+
+        if not alerts:
+            return (
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
+                    text="⚠️ ALERTAS DEFESA CIVIL",
+                ),
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
+                    text="Nenhum alerta ativo.",
+                ),
+            )
+
+        responses: list[OutgoingMessage] = [
+            OutgoingMessage(
+                recipient_id=message.sender_id,
+                text="⚠️ ALERTAS DEFESA CIVIL",
+            )
+        ]
+        for alert in alerts:
+            title = alert.headline or alert.event
+            responses.append(
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
+                    text=f"{title} — severidade: {alert.severity}.",
+                )
+            )
+        return tuple(responses)
 
 
 class CommandHandler:
