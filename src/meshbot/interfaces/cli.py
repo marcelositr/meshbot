@@ -97,6 +97,7 @@ def main() -> None:
     print(f"{settings.name} - simulator")
     print("Digite uma mensagem no formato '<node_id> <mensagem>'.")
     print("Exemplos: !12345678 !ping  |  !12345678 !tempo Ituverava/SP")
+    print("          !12345678 !defesacivil Ituverava/SP")
     print("Digite 'exit' para sair.")
 
     while True:
