@@ -81,3 +81,11 @@ def test_unregistered_user_cannot_set_name() -> None:
     service = UserService(InMemoryUsers())
 
     assert service.set_name("!99999999", "Ana Clara") == "requester_not_registered"
+
+
+def test_user_name_limit_is_24_characters() -> None:
+    repository = InMemoryUsers((User("!11111111"),))
+    service = UserService(repository)
+
+    assert service.set_name("!11111111", "123456789012345678901234") == "name_updated"
+    assert service.set_name("!11111111", "1234567890123456789012345") == "invalid_name"
