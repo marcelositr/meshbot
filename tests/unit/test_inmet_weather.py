@@ -1,5 +1,5 @@
 from meshbot.application.weather import AmbiguousCityError, CityNotFoundError
-from meshbot.infrastructure.inmet_weather import IBGECityResolver, Municipality
+from meshbot.infrastructure.inmet_weather import IBGECityResolver, Municipality, _parse_municipality
 
 
 def test_city_resolver_ignores_case_and_accents() -> None:
@@ -52,3 +52,26 @@ def test_city_resolver_rejects_unknown_city() -> None:
         raise AssertionError("Expected city not found error")
 
 
+def test_parse_municipality_falls_back_to_regiao_intermediaria_uf() -> None:
+    data = {
+        "id": 3524105,
+        "nome": "Ituverava",
+        "microrregiao": None,
+        "regiao-imediata": {
+            "id": 350012,
+            "nome": "Ituverava",
+            "regiao-intermediaria": {
+                "id": 3503,
+                "nome": "Franca",
+                "UF": {
+                    "id": 35,
+                    "sigla": "SP",
+                    "nome": "São Paulo",
+                },
+            },
+        },
+    }
+
+    municipality = _parse_municipality(data)
+
+    assert municipality == Municipality(code=3524105, name="Ituverava", uf="SP")
