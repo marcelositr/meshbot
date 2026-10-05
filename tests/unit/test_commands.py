@@ -8,8 +8,8 @@ from meshbot.application.commands import (
     UnblockCommand,
 )
 from meshbot.application.moderation import ModerationService
-from meshbot.application.users import UserService
 from meshbot.application.moderation_notifications import ModerationNotifier
+from meshbot.application.users import UserService
 from meshbot.application.weather import WeatherForecast
 from meshbot.domain.messages import IncomingMessage, OutgoingMessage
 from meshbot.domain.users import User, UserRole
