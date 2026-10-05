@@ -29,7 +29,7 @@ def test_unregistered_user_is_ignored() -> None:
     transport.inject_message("!99999999", "!ping")
 
     assert bot.process_next_message() is True
-    assert transport.sent_messages == []
+    assert transport.sent_messages[0].text == "Você não está cadastrado. Use !registrar."
 
 
 def test_registered_user_can_use_bot() -> None:
