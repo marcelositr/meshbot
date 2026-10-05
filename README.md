@@ -36,11 +36,12 @@ python3 -m meshbot
 The simulator accepts messages such as:
 
 ```text
-!12345678 /ping
-!12345678 /tempo Ituverava
+!12345678 !ping
+!12345678 !tempo Ituverava
+!12345678 !tempo Ituverava/SP
 ```
 
-The `/tempo` command resolves the municipality by name, accepts `Cidade - UF` for ambiguous names, and supports `/tempo ibge <codigo>` as a fallback.
+The `!tempo` command resolves municipalities through IBGE, accepts `Cidade/UF` for ambiguous names, and supports `!tempo ibge <codigo>` as a fallback.
 
 Run tests:
 
@@ -60,5 +61,7 @@ mypy src
 Copy `config/config.example.toml` to `config/config.toml` and edit the documented settings.
 
 The message interval and the morning/afternoon/night weather period boundaries are configurable so each network can choose its own operating behavior.
+
+The `admins` setting defines the initial administrators. Administrative rules are enforced by the application and are not configurable.
 
 `config/config.toml` is intentionally ignored by Git because it may contain installation-specific settings and secrets.
