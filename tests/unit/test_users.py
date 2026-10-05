@@ -1,6 +1,6 @@
 """Tests for user domain behavior."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from meshbot.domain.users import User, UserRole
 
@@ -20,11 +20,11 @@ def test_admin_user_can_be_created() -> None:
 
 
 def test_silenced_user_is_silenced_until_expiry() -> None:
-    now = datetime(2026, 10, 5, 15, 0, tzinfo=timezone.utc)
+    now = datetime(2026, 10, 5, 15, 0, tzinfo=UTC)
     user = User(
         node_id="!12345678",
-        silenced_until=datetime(2026, 10, 5, 15, 30, tzinfo=timezone.utc),
+        silenced_until=datetime(2026, 10, 5, 15, 30, tzinfo=UTC),
     )
 
     assert user.is_silenced(now) is True
-    assert user.is_silenced(datetime(2026, 10, 5, 15, 30, tzinfo=timezone.utc)) is False
+    assert user.is_silenced(datetime(2026, 10, 5, 15, 30, tzinfo=UTC)) is False
