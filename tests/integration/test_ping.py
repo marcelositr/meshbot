@@ -1,5 +1,5 @@
-from meshbot.bot import MeshBot
-from meshbot.simulator import SimulatorTransport
+from meshbot.application.bot import MeshBot
+from meshbot.infrastructure.simulator import SimulatorTransport
 
 
 def test_simulator_ping_round_trip() -> None:

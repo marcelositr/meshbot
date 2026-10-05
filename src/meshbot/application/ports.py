@@ -1,8 +1,8 @@
-"""Communication boundary between the bot and its environment."""
+"""Communication boundaries required by the application layer."""
 
 from typing import Protocol
 
-from meshbot.messages import Message
+from meshbot.domain.messages import Message
 
 
 class MessageTransport(Protocol):

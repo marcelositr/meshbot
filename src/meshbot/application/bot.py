@@ -1,7 +1,7 @@
 """MeshBot application core."""
 
-from meshbot.messages import Message
-from meshbot.transport import MessageTransport
+from meshbot.application.ports import MessageTransport
+from meshbot.domain.messages import Message
 
 
 class MeshBot:

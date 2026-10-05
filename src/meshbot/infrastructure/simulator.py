@@ -2,7 +2,7 @@
 
 from collections import deque
 
-from meshbot.messages import Message
+from meshbot.domain.messages import Message
 
 
 class SimulatorTransport:
