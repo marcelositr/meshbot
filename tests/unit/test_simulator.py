@@ -1,14 +1,14 @@
 """Tests for the simulator transport."""
 
-from meshbot.domain.messages import Message
+from meshbot.domain.messages import OutgoingMessage
 from meshbot.infrastructure.simulator import SimulatorTransport
 
 
 def test_send_stores_message_and_calls_observer() -> None:
-    sent: list[Message] = []
+    sent: list[OutgoingMessage] = []
 
     transport = SimulatorTransport(on_send=sent.append)
-    message = Message(node_id="!12345678", text="pong")
+    message = OutgoingMessage(recipient_id="!12345678", text="pong")
 
     transport.send(message)
 
