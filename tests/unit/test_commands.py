@@ -7,7 +7,7 @@ from meshbot.infrastructure.weather import FakeWeatherService
 def test_ping_command_returns_pong() -> None:
     handler = CommandHandler([PingCommand()])
 
-    response = handler.handle(Message(node_id="!12345678", text="/ping"))
+    response = handler.handle(Message(node_id="!12345678", text="!ping"))
 
     assert response == (Message(node_id="!12345678", text="pong"),)
 
@@ -15,7 +15,7 @@ def test_ping_command_returns_pong() -> None:
 def test_unknown_command_returns_no_response() -> None:
     handler = CommandHandler([PingCommand()])
 
-    response = handler.handle(Message(node_id="!12345678", text="/unknown"))
+    response = handler.handle(Message(node_id="!12345678", text="!unknown"))
 
     assert response == ()
 
@@ -43,7 +43,7 @@ def test_tempo_command_formats_four_compact_messages() -> None:
     )
     handler = CommandHandler([TempoCommand(service)])
 
-    response = handler.handle(Message(node_id="!12345678", text="/tempo Ituverava"))
+    response = handler.handle(Message(node_id="!12345678", text="!tempo Ituverava"))
 
     assert [message.text for message in response] == [
         "Ituverava: Nublado c/ pancadas de chuva e trovoadas isoladas.",
@@ -56,6 +56,26 @@ def test_tempo_command_formats_four_compact_messages() -> None:
 def test_tempo_command_requires_city() -> None:
     handler = CommandHandler([TempoCommand(FakeWeatherService())])
 
-    response = handler.handle(Message(node_id="!12345678", text="/tempo"))
+    response = handler.handle(Message(node_id="!12345678", text="!tempo"))
 
-    assert response[0].text == "Use: /tempo <cidade>"
+    assert response[0].text == "Use: !tempo <cidade>"
+
+
+def test_tempo_command_accepts_city_and_uf() -> None:
+    service = FakeWeatherService(
+        WeatherForecast(
+            city="Ituverava",
+            summary="Tempo estável.",
+            temperature_min=18,
+            temperature_max=30,
+            humidity_min=45,
+            humidity_max=85,
+            wind_direction="NE",
+            wind_intensity="fraco",
+        )
+    )
+    handler = CommandHandler([TempoCommand(service)])
+
+    response = handler.handle(Message(node_id="!12345678", text="!tempo Ituverava/SP"))
+
+    assert response[0].text == "Ituverava: Tempo estável."
