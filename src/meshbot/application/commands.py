@@ -11,7 +11,7 @@ from meshbot.application.weather import (
     WeatherService,
     WeatherServiceUnavailableError,
 )
-from meshbot.domain.messages import IncomingOutgoingMessage, OutgoingOutgoingMessage
+from meshbot.domain.messages import IncomingMessage, OutgoingMessage
 
 
 class Command(Protocol):
