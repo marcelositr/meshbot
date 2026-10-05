@@ -27,7 +27,7 @@ def test_tempo_round_trip_sends_four_messages_with_delay_between_them() -> None:
         sleep=delays.append,
     )
 
-    transport.inject_message("!12345678", "/tempo Ituverava")
+    transport.inject_message("!12345678", "!tempo Ituverava")
 
     assert bot.process_next_message() is True
     assert [message.text for message in transport.sent_messages] == [
