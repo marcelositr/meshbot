@@ -4,7 +4,8 @@ from pathlib import Path
 
 from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.bot import MeshBot
-from meshbot.application.commands import CommandHandler, PingCommand, TempoCommand
+from meshbot.application.commands import CommandHandler, PingCommand, RegisterCommand, TempoCommand
+from meshbot.application.users import UserService
 from meshbot.config import ConfigurationError, load_settings
 from meshbot.domain.messages import Message
 from meshbot.domain.users import User, UserRole
@@ -42,7 +43,7 @@ def main() -> None:
         night_start=settings.weather_night_start,
     )
     command_handler = CommandHandler(
-        [PingCommand(), TempoCommand(weather_service)],
+        [PingCommand(), RegisterCommand(UserService(user_repository, settings.registration_requires_admin)), TempoCommand(weather_service)],
         prefix=settings.command_prefix,
     )
     bot = MeshBot(
