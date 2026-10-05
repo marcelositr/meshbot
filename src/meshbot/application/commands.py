@@ -22,7 +22,7 @@ class Command(Protocol):
 
 
 class PingCommand:
-    """Respond to /ping with pong."""
+    """Respond to !ping with pong."""
 
     name = "ping"
 
@@ -45,7 +45,7 @@ class TempoCommand:
         city = parts[1].strip() if len(parts) == 2 else ""
 
         if not city:
-            return (Message(node_id=message.node_id, text="Use: /tempo <cidade>"),)
+            return (Message(node_id=message.node_id, text="Use: !tempo <cidade>"),)
 
         try:
             forecast = self._weather_service.get_forecast(city)
@@ -53,7 +53,7 @@ class TempoCommand:
             return (
                 Message(
                     node_id=message.node_id,
-                    text=f'Não encontrei "{city}". Use /tempo ibge <codigo>.',
+                    text=f'Não encontrei "{city}". Use !tempo ibge <codigo>.',
                 ),
             )
         except AmbiguousCityError as exc:
@@ -65,7 +65,7 @@ class TempoCommand:
                 ),
                 Message(
                     node_id=message.node_id,
-                    text="Use /tempo <cidade> - <UF>.",
+                    text="Use !tempo <cidade>/<UF>.",
                 ),
             )
         except WeatherServiceUnavailableError:
@@ -96,7 +96,7 @@ class TempoCommand:
 class CommandHandler:
     """Resolve and execute registered bot commands."""
 
-    def __init__(self, commands: list[Command], prefix: str = "/") -> None:
+    def __init__(self, commands: list[Command], prefix: str = "!") -> None:
         self._commands = {command.name: command for command in commands}
         self._prefix = prefix
 
