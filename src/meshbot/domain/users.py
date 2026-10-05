@@ -12,7 +12,9 @@ DEFAULT_USER_NAME = "Sem nome"
 def normalize_node_id(value: str) -> str:
     """Normalize and validate a standard Meshtastic node ID."""
     value = value.strip().lower()
-    if len(value) != 9 or value[0] != "!" or any(\n        char not in "0123456789abcdef" for char in value[1:]\n    ):
+    if len(value) != 9 or value[0] != "!" or any(
+        char not in "0123456789abcdef" for char in value[1:]
+    ):
         raise ValueError("node_id must use ! followed by 8 hexadecimal characters.")
     return value
 
