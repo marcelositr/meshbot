@@ -64,3 +64,14 @@ def test_silence_notification_includes_duration() -> None:
     assert messages[0].text == "Silenciado: 15min."
     assert messages[1].recipient_id == "!11111111"
     assert messages[1].text == "Silêncio: !11111111>!22222222 15min"
+
+
+def test_moderation_preserves_target_name() -> None:
+    repository = InMemoryUsers(
+        (
+            User("!11111111", role=UserRole.ADMIN),
+            User("!22222222", name="Ana Clara"),
+        )
+    )
+    notifier = ModerationNotifier(repository)
+    assert notifier.notify("blocked", "!11111111", "!22222222")[0].text == "Bloqueado."
