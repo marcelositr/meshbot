@@ -11,7 +11,7 @@ from meshbot.application.weather import (
     WeatherService,
     WeatherServiceUnavailableError,
 )
-from meshbot.domain.messages import Message
+from meshbot.domain.messages import IncomingOutgoingMessage, OutgoingOutgoingMessage
 
 
 class Command(Protocol):
@@ -19,7 +19,7 @@ class Command(Protocol):
 
     name: str
 
-    def execute(self, message: Message) -> tuple[Message, ...]:
+    def execute(self, message: IncomingMessage) -> tuple[OutgoingMessage, ...]:
         """Execute the command for an incoming message."""
         ...
 
@@ -29,9 +29,9 @@ class PingCommand:
 
     name = "ping"
 
-    def execute(self, message: Message) -> tuple[Message, ...]:
+    def execute(self, message: IncomingMessage) -> tuple[OutgoingMessage, ...]:
         """Return the pong response."""
-        return (Message(node_id=message.node_id, text="pong"),)
+        return (OutgoingMessage(recipient_id=message.sender_id, text="pong"),)
 
 
 class RegisterCommand:
@@ -42,12 +42,12 @@ class RegisterCommand:
     def __init__(self, user_service: UserService) -> None:
         self._user_service = user_service
 
-    def execute(self, message: Message) -> tuple[Message, ...]:
+    def execute(self, message: IncomingMessage) -> tuple[OutgoingMessage, ...]:
         """Register the requested node."""
         parts = message.text.strip().split(maxsplit=1)
         node_id = parts[1].strip() if len(parts) == 2 else ""
 
-        result = self._user_service.register(message.node_id, node_id)
+        result = self._user_service.register(message.sender_id, node_id)
         responses = {
             "registered": f"Usuário {node_id} cadastrado.",
             "already_registered": f"Usuário {node_id} já está cadastrado.",
@@ -55,7 +55,7 @@ class RegisterCommand:
             "requester_not_registered": "Usuário não cadastrado.",
             "invalid_node_id": "Use: !registrar <node_id>",
         }
-        return (Message(node_id=message.node_id, text=responses[result]),)
+        return (OutgoingMessage(recipient_id=message.sender_id, text=responses[result]),)
 
 
 class TempoCommand:
@@ -66,55 +66,55 @@ class TempoCommand:
     def __init__(self, weather_service: WeatherService) -> None:
         self._weather_service = weather_service
 
-    def execute(self, message: Message) -> tuple[Message, ...]:
+    def execute(self, message: IncomingMessage) -> tuple[OutgoingMessage, ...]:
         """Resolve the requested city and format the forecast."""
         parts = message.text.strip().split(maxsplit=1)
         city = parts[1].strip() if len(parts) == 2 else ""
 
         if not city:
-            return (Message(node_id=message.node_id, text="Use: !tempo <cidade>"),)
+            return (OutgoingMessage(recipient_id=message.sender_id, text="Use: !tempo <cidade>"),)
 
         try:
             forecast = self._weather_service.get_forecast(city)
         except CityNotFoundError:
             return (
-                Message(
-                    node_id=message.node_id,
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
                     text=f'Não encontrei "{city}". Use !tempo ibge <codigo>.',
                 ),
             )
         except AmbiguousCityError as exc:
             choices = ", ".join(exc.matches)
             return (
-                Message(
-                    node_id=message.node_id,
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
                     text=f"Encontrei mais de uma cidade: {choices}",
                 ),
-                Message(
-                    node_id=message.node_id,
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
                     text="Use !tempo <cidade>/<UF>.",
                 ),
             )
         except WeatherServiceUnavailableError:
             return (
-                Message(
-                    node_id=message.node_id,
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
                     text="Serviço de previsão indisponível no momento.",
                 ),
             )
 
         return (
-            Message(node_id=message.node_id, text=f"{forecast.city}: {forecast.summary}"),
-            Message(
-                node_id=message.node_id,
+            OutgoingMessage(recipient_id=message.sender_id, text=f"{forecast.city}: {forecast.summary}"),
+            OutgoingMessage(
+                recipient_id=message.sender_id,
                 text=f"Temperatura: {forecast.temperature_min}°C a {forecast.temperature_max}°C",
             ),
-            Message(
-                node_id=message.node_id,
+            OutgoingMessage(
+                recipient_id=message.sender_id,
                 text=f"Umidade: {forecast.humidity_min}% a {forecast.humidity_max}%",
             ),
-            Message(
-                node_id=message.node_id,
+            OutgoingMessage(
+                recipient_id=message.sender_id,
                 text=f"Vento: {forecast.wind_direction}, {forecast.wind_intensity}",
             ),
         )
@@ -127,7 +127,7 @@ class CommandHandler:
         self._commands = {command.name: command for command in commands}
         self._prefix = prefix
 
-    def handle(self, message: Message) -> tuple[Message, ...]:
+    def handle(self, message: IncomingMessage) -> tuple[OutgoingMessage, ...]:
         """Execute a matching command or return no responses."""
         command_text = message.text.strip()
 
@@ -157,22 +157,22 @@ class BlockCommand:
         self._moderation_service = moderation_service
         self._notifier = notifier
 
-    def execute(self, message: Message) -> tuple[Message, ...]:
+    def execute(self, message: IncomingMessage) -> tuple[OutgoingMessage, ...]:
         """Block the requested user."""
         parts = message.text.strip().split(maxsplit=1)
         target_id = parts[1].strip() if len(parts) == 2 else ""
 
         if not target_id:
             return (
-                Message(
-                    node_id=message.node_id,
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
                     text="Use: !bloquear <node_id>",
                 ),
             )
 
-        result = self._moderation_service.block(message.node_id, target_id)
+        result = self._moderation_service.block(message.sender_id, target_id)
         if result == "blocked":
-            return self._notifier.notify("blocked", message.node_id, target_id)
+            return self._notifier.notify("blocked", message.sender_id, target_id)
 
         responses = {
             "already_blocked": f"Usuário {target_id} já está bloqueado.",
@@ -181,7 +181,7 @@ class BlockCommand:
             "target_not_registered": f"Usuário {target_id} não está cadastrado.",
             "cannot_moderate_admin": "Administradores não podem moderar administradores.",
         }
-        return (Message(node_id=message.node_id, text=responses[result]),)
+        return (OutgoingMessage(recipient_id=message.sender_id, text=responses[result]),)
 
 
 class UnblockCommand:
@@ -197,22 +197,22 @@ class UnblockCommand:
         self._moderation_service = moderation_service
         self._notifier = notifier
 
-    def execute(self, message: Message) -> tuple[Message, ...]:
+    def execute(self, message: IncomingMessage) -> tuple[OutgoingMessage, ...]:
         """Unblock the requested user."""
         parts = message.text.strip().split(maxsplit=1)
         target_id = parts[1].strip() if len(parts) == 2 else ""
 
         if not target_id:
             return (
-                Message(
-                    node_id=message.node_id,
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
                     text="Use: !desbloquear <node_id>",
                 ),
             )
 
-        result = self._moderation_service.unblock(message.node_id, target_id)
+        result = self._moderation_service.unblock(message.sender_id, target_id)
         if result == "unblocked":
-            return self._notifier.notify("unblocked", message.node_id, target_id)
+            return self._notifier.notify("unblocked", message.sender_id, target_id)
 
         responses = {
             "not_blocked": f"Usuário {target_id} não está bloqueado.",
@@ -221,7 +221,7 @@ class UnblockCommand:
             "target_not_registered": f"Usuário {target_id} não está cadastrado.",
             "cannot_moderate_admin": "Administradores não podem moderar administradores.",
         }
-        return (Message(node_id=message.node_id, text=responses[result]),)
+        return (OutgoingMessage(recipient_id=message.sender_id, text=responses[result]),)
 
 
 class SilenceCommand:
@@ -237,7 +237,7 @@ class SilenceCommand:
         self._moderation_service = moderation_service
         self._notifier = notifier
 
-    def execute(self, message: Message) -> tuple[Message, ...]:
+    def execute(self, message: IncomingMessage) -> tuple[OutgoingMessage, ...]:
         """Silence the requested user."""
         parts = message.text.strip().split()
         target_id = parts[1] if len(parts) >= 2 else ""
@@ -245,8 +245,8 @@ class SilenceCommand:
 
         if not target_id:
             return (
-                Message(
-                    node_id=message.node_id,
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
                     text="Use: !silenciar <node_id> [minutos]",
                 ),
             )
@@ -257,14 +257,14 @@ class SilenceCommand:
                 minutes = int(minutes_text)
             except ValueError:
                 return (
-                    Message(
-                        node_id=message.node_id,
+                    OutgoingMessage(
+                        recipient_id=message.sender_id,
                         text="Informe um número inteiro de minutos.",
                     ),
                 )
 
         result = self._moderation_service.silence(
-            message.node_id,
+            message.sender_id,
             target_id,
             minutes,
         )
@@ -276,7 +276,7 @@ class SilenceCommand:
         if result == "silenced":
             return self._notifier.notify(
                 "silenced",
-                message.node_id,
+                message.sender_id,
                 target_id,
                 duration,
             )
@@ -288,4 +288,4 @@ class SilenceCommand:
             "target_not_registered": f"Usuário {target_id} não está cadastrado.",
             "cannot_moderate_admin": "Administradores não podem moderar administradores.",
         }
-        return (Message(node_id=message.node_id, text=responses[result]),)
+        return (OutgoingMessage(recipient_id=message.sender_id, text=responses[result]),)
