@@ -118,16 +118,11 @@ class TempoCommand:
                     text="Cidade não encontrada.",
                 ),
             )
-        except AmbiguousCityError as exc:
-            choices = ", ".join(exc.matches)
+        except AmbiguousCityError:
             return (
                 OutgoingMessage(
                     recipient_id=message.sender_id,
-                    text=f"Encontrei mais de uma cidade: {choices}",
-                ),
-                OutgoingMessage(
-                    recipient_id=message.sender_id,
-                    text="Use !tempo <cidade>/<UF>.",
+                    text="Cidade ambígua. Use cidade/UF.",
                 ),
             )
         except WeatherServiceUnavailableError:
@@ -141,7 +136,7 @@ class TempoCommand:
         return (
             OutgoingMessage(
                 recipient_id=message.sender_id,
-                text=f"{forecast.city}: {forecast.summary.split(",")[0][:30]}",
+                text=f"{forecast.city}: {forecast.summary.split(',')[0][:30]}",
             ),
             OutgoingMessage(
                 recipient_id=message.sender_id,
