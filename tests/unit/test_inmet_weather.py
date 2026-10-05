@@ -20,7 +20,7 @@ def test_city_resolver_accepts_uf_for_ambiguous_names() -> None:
         Municipality(code=2, name="Santa Rita", uf="PB"),
     )
 
-    result = resolver.resolve("Santa Rita - PB")
+    result = resolver.resolve("Santa Rita/PB")
 
     assert result.code == 2
 
@@ -35,7 +35,7 @@ def test_city_resolver_rejects_ambiguous_name_without_uf() -> None:
     try:
         resolver.resolve("Santa Rita")
     except AmbiguousCityError as exc:
-        assert exc.matches == ("Santa Rita - MG", "Santa Rita - PB")
+        assert exc.matches == ("Santa Rita/MG", "Santa Rita/PB")
     else:
         raise AssertionError("Expected ambiguous city error")
 
