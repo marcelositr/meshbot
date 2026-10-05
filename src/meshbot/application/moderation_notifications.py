@@ -22,12 +22,12 @@ class ModerationNotifier:
             "blocked": "MeshBot: Você foi bloqueado.",
             "unblocked": "MeshBot: Seu acesso ao MeshBot foi desbloqueado.",
             "silenced": (
-                f"MeshBot: Você foi silenciado por {duration_minutes} minutos."
+                f"Silenciado: {duration_minutes}min."
             ),
         }
         admin_texts = {
-            "blocked": f"MeshBot: Admin {actor_id} bloqueou {target_id}.",
-            "unblocked": f"MeshBot: Admin {actor_id} desbloqueou {target_id}.",
+            "blocked": f"Bloqueio: {actor_id}>{target_id}",
+            "unblocked": f"Desbloqueio: {actor_id}>{target_id}",
             "silenced": (
                 f"MeshBot: Admin {actor_id} silenciou "
                 f"{target_id} por {duration_minutes} minutos."
