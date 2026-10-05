@@ -2,16 +2,16 @@
 
 from typing import Protocol
 
-from meshbot.domain.messages import Message
+from meshbot.domain.messages import IncomingOutgoingMessage, OutgoingOutgoingMessage
 
 
-class MessageTransport(Protocol):
+class OutgoingMessageTransport(Protocol):
     """Interface required by the bot to communicate."""
 
-    def receive(self) -> Message | None:
+    def receive(self) -> IncomingMessage | None:
         """Return the next incoming message, if one is available."""
         ...
 
-    def send(self, message: Message) -> None:
+    def send(self, message: OutgoingMessage) -> None:
         """Send a message to a node."""
         ...
