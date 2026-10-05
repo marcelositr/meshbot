@@ -35,14 +35,14 @@ def test_block_notification_targets_user_then_all_admins() -> None:
 
     messages = notifier.notify("blocked", "!11111111", "!22222222")
 
-    assert [message.node_id for message in messages] == [
+    assert [message.recipient_id for message in messages] == [
         "!22222222",
         "!11111111",
         "!33333333",
     ]
     assert messages[0].node_id == "!22222222"
     assert messages[0].text == "MeshBot: Você foi bloqueado."
-    assert [message.node_id for message in messages[1:]] == ["!11111111", "!33333333"]
+    assert [message.recipient_id for message in messages[1:]] == ["!11111111", "!33333333"]
     assert all(
         message.text == "MeshBot: Admin !11111111 bloqueou !22222222."
         for message in messages[1:]
