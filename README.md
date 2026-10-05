@@ -39,17 +39,19 @@ The simulator accepts messages such as:
 !12345678 !ping
 !12345678 !tempo Ituverava
 !12345678 !tempo Ituverava/SP
-!12345678 !registrar !22222222
-!12345678 !bloquear !22222222
-!12345678 !desbloquear !22222222
-!12345678 !silenciar !22222222 30
+!12345678 !registrar
+!12345678 !nome João da Silva
+!12345678 !tempo Ituverava/SP
+!12345678 !defesacivil Ituverava/SP
 ```
 
-The `!tempo` command resolves municipalities through IBGE, accepts `Cidade/UF` for ambiguous names, and supports `!tempo ibge <codigo>` as a fallback.
+The `!tempo` command resolves municipalities through IBGE and accepts `Cidade/UF` for ambiguous names.
+
+The `!defesacivil` command queries the official Defense Civil public alert feed for a municipality and reports active alerts. It is a read-only, on-demand query; the bot does not send automatic alerts.
 
 The `!registrar` command uses `!registrar <node_id>`. A registered user can set or replace their friendly display name with `!nome <nome>`. User names accept Unicode letters, numbers, and spaces, preserve uppercase/lowercase, normalize surrounding/repeated spaces, and reject punctuation, symbols, and emojis. Names are limited to 24 characters.
 
-The `!registrar`, `!bloquear`, `!desbloquear`, and `!silenciar` commands are restricted to administrators. Administrators cannot moderate other administrators. `!silenciar` accepts an optional duration in minutes and otherwise uses `default_silence_minutes`.
+A user can register their own node with `!registrar`. Moderation commands such as `!bloquear`, `!desbloquear`, and `!silenciar` require administrator privileges. Administrators cannot moderate other administrators. `!silenciar` accepts an optional duration in minutes and otherwise uses `default_silence_minutes`.
 
 Run tests:
 
