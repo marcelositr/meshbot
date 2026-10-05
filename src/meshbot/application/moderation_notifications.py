@@ -34,7 +34,7 @@ class ModerationNotifier:
             "unblocked": f"{target_name}, você foi desbloqueado.",
             "silenced": (
                 f"{target_name}, você foi silenciado "
-                f"por {duration_minutes} minutos."
+                f"por {duration_minutes} minuto{"" if duration_minutes == 1 else "s"}."
             ),
         }
         admin_texts = {
