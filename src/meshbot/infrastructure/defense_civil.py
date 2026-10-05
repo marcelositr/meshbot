@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import unicodedata
 import xml.etree.ElementTree as ET
+from datetime import UTC, datetime
 
 import requests
 
@@ -63,10 +64,13 @@ class DefenseCivilAlertService:
             if alert is None:
                 continue
 
-            if self._matches_location(
-                alert.area,
-                municipality.name,
-                municipality.uf,
+            if (
+                self._is_active(alert.expires)
+                and self._matches_location(
+                    alert.area,
+                    municipality.name,
+                    municipality.uf,
+                )
             ):
                 alerts.append(alert)
 
@@ -81,6 +85,21 @@ class DefenseCivilAlertService:
             raise DefenseCivilAmbiguousCityError(exc.matches) from exc
         except WeatherServiceUnavailableError as exc:
             raise DefenseCivilServiceUnavailableError(str(exc)) from exc
+
+    @staticmethod
+    def _is_active(expires: str | None) -> bool:
+        if not expires:
+            return True
+
+        try:
+            expiry = datetime.fromisoformat(expires.replace("Z", "+00:00"))
+        except ValueError:
+            return False
+
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=UTC)
+
+        return expiry > datetime.now(UTC)
 
     @staticmethod
     def _matches_location(area: str, city: str, uf: str) -> bool:
