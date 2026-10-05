@@ -1,5 +1,6 @@
 from meshbot.application.bot import MeshBot
 from meshbot.application.commands import CommandHandler, PingCommand
+from meshbot.domain.messages import OutgoingMessage
 from meshbot.infrastructure.simulator import SimulatorTransport
 
 
@@ -11,7 +12,7 @@ def test_simulator_ping_round_trip() -> None:
 
     assert bot.process_next_message() is True
     assert len(transport.sent_messages) == 1
-    assert transport.sent_messages[0].node_id == "!12345678"
+    assert transport.sent_messages[0].recipient_id == "!12345678"
     assert transport.sent_messages[0].text == "pong"
 
 
