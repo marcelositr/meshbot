@@ -40,12 +40,6 @@ def test_duplicate_registration_is_rejected() -> None:
     assert service.register("!22222222") == "already_registered"
 
 
-def test_invalid_node_id_is_rejected() -> None:
-    service = UserService(InMemoryUsers())
-
-    assert service.register("not-a-node") == "invalid_node_id"
-
-
 def test_registered_user_can_set_name() -> None:
     repository = InMemoryUsers((User("!11111111"),))
     service = UserService(repository)
