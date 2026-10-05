@@ -120,7 +120,7 @@ class InmetWeatherService:
                 humidity_min=int(forecast["umidade_min"]),
                 humidity_max=int(forecast["umidade_max"]),
                 wind_direction=str(forecast["dir_vento"]),
-                wind_intensity=str(forecast["int_vento"]).lower(),
+                wind_intensity=_format_wind_intensity(str(forecast["int_vento"])),
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise WeatherServiceUnavailableError(
@@ -196,3 +196,8 @@ def _parse_time(value: str) -> time:
         return datetime.strptime(value, "%H:%M").time()
     except ValueError as exc:
         raise ValueError(f"Invalid weather period time: {value!r}") from exc
+
+
+def _format_wind_intensity(value: str) -> str:
+    normalized = value.strip().lower()
+    return normalized[:-1] if normalized.endswith("s") else normalized
