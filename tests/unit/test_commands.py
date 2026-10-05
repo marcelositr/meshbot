@@ -7,9 +7,9 @@ from meshbot.application.commands import (
     UnblockCommand,
 )
 from meshbot.application.moderation import ModerationService
-from meshbot.domain.users import User, UserRole
 from meshbot.application.weather import WeatherForecast
 from meshbot.domain.messages import Message
+from meshbot.domain.users import User, UserRole
 from meshbot.infrastructure.weather import FakeWeatherService
 
 
