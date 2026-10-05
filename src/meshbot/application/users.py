@@ -2,7 +2,7 @@
 
 from typing import Protocol
 
-from meshbot.domain.users import User, normalize_user_name
+from meshbot.domain.users import User, normalize_node_id, normalize_user_name
 
 
 class UserRepository(Protocol):
@@ -29,7 +29,10 @@ class UserService:
 
     def register(self, requester_id: str) -> str:
         """Register the requesting node itself."""
-        node_id = requester_id.strip()
+        try:
+            node_id = normalize_node_id(requester_id)
+        except ValueError:
+            return "invalid_node_id"
 
         if self._repository.get(node_id) is not None:
             return "already_registered"
