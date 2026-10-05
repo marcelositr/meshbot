@@ -35,7 +35,8 @@ class MeshBot:
         if self._authorization is not None:
             authorization = self._authorization.check(message.sender_id)
             if not authorization.allowed:
-                if authorization.reason == "not_registered" and message.text.strip() == "!registrar":
+                is_registration = message.text.strip() == "!registrar"
+                if authorization.reason == "not_registered" and is_registration:
                     pass
                 elif authorization.reason == "not_registered":
                     self._transport.send(
