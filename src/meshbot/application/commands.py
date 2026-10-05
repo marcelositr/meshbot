@@ -40,7 +40,9 @@ class TempoCommand:
 
     def execute(self, message: Message) -> tuple[Message, ...]:
         """Resolve the requested city and format the forecast."""
-        city = message.text[len("/tempo") :].strip()
+        parts = message.text.strip().split(maxsplit=1)
+        city = parts[1].strip() if len(parts) == 2 else ""
+
         if not city:
             return (Message(node_id=message.node_id, text="Use: /tempo <cidade>"),)
 
