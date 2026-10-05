@@ -2,10 +2,10 @@
 
 from typing import Protocol
 
-from meshbot.domain.messages import IncomingOutgoingMessage, OutgoingOutgoingMessage
+from meshbot.domain.messages import IncomingMessage, OutgoingMessage
 
 
-class OutgoingMessageTransport(Protocol):
+class MessageTransport(Protocol):
     """Interface required by the bot to communicate."""
 
     def receive(self) -> IncomingMessage | None:
