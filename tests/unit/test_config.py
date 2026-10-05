@@ -11,7 +11,6 @@ transport = "simulator"
 channel_name = "LongFast"
 channel_index = 0
 admins = ["!12345678"]
-registration_requires_admin = true
 default_silence_minutes = 30
 command_prefix = "/"
 log_level = "INFO"
