@@ -7,6 +7,7 @@ import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, time
 from typing import Any
+
 import requests
 
 from meshbot.application.weather import (
@@ -15,7 +16,6 @@ from meshbot.application.weather import (
     WeatherForecast,
     WeatherServiceUnavailableError,
 )
-
 
 _HTTP_HEADERS = {
     "User-Agent": (
@@ -190,12 +190,33 @@ def _parse_municipality(data: Any) -> Municipality:
     try:
         code = int(data["id"])
         name = str(data["nome"])
-        uf = str(data["microrregiao"]["mesorregiao"]["UF"]["sigla"])
+        uf = _extract_uf(data)
     except (KeyError, TypeError, ValueError) as exc:
         raise WeatherServiceUnavailableError(
             "IBGE returned an unexpected municipality response."
         ) from exc
     return Municipality(code=code, name=name, uf=uf)
+
+
+def _extract_uf(data: dict[str, Any]) -> str:
+    """Extract the municipality UF from the available IBGE hierarchy."""
+    microrregiao = data.get("microrregiao")
+    if isinstance(microrregiao, dict):
+        mesorregiao = microrregiao.get("mesorregiao")
+        if isinstance(mesorregiao, dict):
+            uf = mesorregiao.get("UF")
+            if isinstance(uf, dict) and isinstance(uf.get("sigla"), str):
+                return uf["sigla"]
+
+    regiao_imediata = data.get("regiao-imediata")
+    if isinstance(regiao_imediata, dict):
+        regiao_intermediaria = regiao_imediata.get("regiao-intermediaria")
+        if isinstance(regiao_intermediaria, dict):
+            uf = regiao_intermediaria.get("UF")
+            if isinstance(uf, dict) and isinstance(uf.get("sigla"), str):
+                return uf["sigla"]
+
+    raise ValueError("IBGE municipality response does not contain a UF.")
 
 
 def _parse_time(value: str) -> time:
