@@ -18,7 +18,7 @@ from meshbot.application.defense_civil import (
     DefenseCivilCityNotFoundError,
     DefenseCivilServiceUnavailableError,
 )
-from meshbot.infrastructure.inmet_weather import IBGECityResolver
+from meshbot.infrastructure.inmet_weather import IBGECityResolver, Municipality
 
 URL = "https://idapfile.mdr.gov.br/idap/api/rss/cap"
 TIMEOUT_SECONDS = 10
@@ -72,7 +72,7 @@ class DefenseCivilAlertService:
 
         return tuple(alerts)
 
-    def _resolve(self, location: str):
+    def _resolve(self, location: str) -> Municipality:
         try:
             return self._resolver.resolve(location)
         except CityNotFoundError as exc:
