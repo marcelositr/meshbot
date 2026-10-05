@@ -45,6 +45,12 @@ channel_index = 0
 admins = []
 
 # ------------------------------------------------------------
+# BANCO DE DADOS
+# ------------------------------------------------------------
+# Banco SQLite usado para usuários e moderação.
+database_path = "data/meshbot.db"
+
+# ------------------------------------------------------------
 # CADASTRO DE USUÁRIOS
 # ------------------------------------------------------------
 registration_requires_admin = true
