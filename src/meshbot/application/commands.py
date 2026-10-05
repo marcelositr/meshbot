@@ -2,6 +2,7 @@
 
 from typing import Protocol
 
+from meshbot.application.moderation import ModerationService
 from meshbot.application.users import UserService
 from meshbot.application.weather import (
     AmbiguousCityError,
@@ -140,3 +141,124 @@ class CommandHandler:
             return ()
 
         return command.execute(message)
+
+
+class BlockCommand:
+    """Block a registered user."""
+
+    name = "bloquear"
+
+    def __init__(self, moderation_service: ModerationService) -> None:
+        self._moderation_service = moderation_service
+
+    def execute(self, message: Message) -> tuple[Message, ...]:
+        """Block the requested user."""
+        parts = message.text.strip().split(maxsplit=1)
+        target_id = parts[1].strip() if len(parts) == 2 else ""
+
+        if not target_id:
+            return (
+                Message(
+                    node_id=message.node_id,
+                    text="Use: !bloquear <node_id>",
+                ),
+            )
+
+        result = self._moderation_service.block(message.node_id, target_id)
+        responses = {
+            "blocked": f"Usuário {target_id} bloqueado.",
+            "already_blocked": f"Usuário {target_id} já está bloqueado.",
+            "admin_required": "Apenas administradores podem moderar usuários.",
+            "requester_not_registered": "Usuário não cadastrado.",
+            "target_not_registered": f"Usuário {target_id} não está cadastrado.",
+            "cannot_moderate_admin": "Administradores não podem moderar administradores.",
+        }
+        return (Message(node_id=message.node_id, text=responses[result]),)
+
+
+class UnblockCommand:
+    """Unblock a registered user."""
+
+    name = "desbloquear"
+
+    def __init__(self, moderation_service: ModerationService) -> None:
+        self._moderation_service = moderation_service
+
+    def execute(self, message: Message) -> tuple[Message, ...]:
+        """Unblock the requested user."""
+        parts = message.text.strip().split(maxsplit=1)
+        target_id = parts[1].strip() if len(parts) == 2 else ""
+
+        if not target_id:
+            return (
+                Message(
+                    node_id=message.node_id,
+                    text="Use: !desbloquear <node_id>",
+                ),
+            )
+
+        result = self._moderation_service.unblock(message.node_id, target_id)
+        responses = {
+            "unblocked": f"Usuário {target_id} desbloqueado.",
+            "not_blocked": f"Usuário {target_id} não está bloqueado.",
+            "admin_required": "Apenas administradores podem moderar usuários.",
+            "requester_not_registered": "Usuário não cadastrado.",
+            "target_not_registered": f"Usuário {target_id} não está cadastrado.",
+            "cannot_moderate_admin": "Administradores não podem moderar administradores.",
+        }
+        return (Message(node_id=message.node_id, text=responses[result]),)
+
+
+class SilenceCommand:
+    """Silence a registered user."""
+
+    name = "silenciar"
+
+    def __init__(self, moderation_service: ModerationService) -> None:
+        self._moderation_service = moderation_service
+
+    def execute(self, message: Message) -> tuple[Message, ...]:
+        """Silence the requested user."""
+        parts = message.text.strip().split()
+        target_id = parts[1] if len(parts) >= 2 else ""
+        minutes_text = parts[2] if len(parts) >= 3 else ""
+
+        if not target_id:
+            return (
+                Message(
+                    node_id=message.node_id,
+                    text="Use: !silenciar <node_id> [minutos]",
+                ),
+            )
+
+        minutes: int | None = None
+        if minutes_text:
+            try:
+                minutes = int(minutes_text)
+            except ValueError:
+                return (
+                    Message(
+                        node_id=message.node_id,
+                        text="Informe um número inteiro de minutos.",
+                    ),
+                )
+
+        result = self._moderation_service.silence(
+            message.node_id,
+            target_id,
+            minutes,
+        )
+        duration = (
+            minutes
+            if minutes is not None
+            else self._moderation_service.default_silence_minutes
+        )
+        responses = {
+            "silenced": f"Usuário {target_id} silenciado por {duration} minutos.",
+            "invalid_minutes": "O tempo de silêncio deve ser maior que zero.",
+            "admin_required": "Apenas administradores podem moderar usuários.",
+            "requester_not_registered": "Usuário não cadastrado.",
+            "target_not_registered": f"Usuário {target_id} não está cadastrado.",
+            "cannot_moderate_admin": "Administradores não podem moderar administradores.",
+        }
+        return (Message(node_id=message.node_id, text=responses[result]),)
