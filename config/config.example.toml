@@ -1,0 +1,85 @@
+# ============================================================
+# MESHBOT - CONFIGURAÇÃO
+# ============================================================
+#
+# Copie este arquivo para config/config.toml.
+# O arquivo config.toml é ignorado pelo Git.
+#
+# A configuração padrão é segura: usa o simulador e não
+# transmite em uma rede Meshtastic real.
+#
+# ============================================================
+
+# ------------------------------------------------------------
+# AMBIENTE
+# ------------------------------------------------------------
+# development = simulador local
+# production  = equipamento Meshtastic real
+environment = "development"
+
+# ------------------------------------------------------------
+# IDENTIDADE DO BOT
+# ------------------------------------------------------------
+name = "MeshBot"
+
+# ------------------------------------------------------------
+# TRANSPORTE
+# ------------------------------------------------------------
+# simulator = rede/chat local
+# wifi      = Meshtastic via Wi-Fi
+# bluetooth = Meshtastic via Bluetooth
+# usb       = Meshtastic via USB
+transport = "simulator"
+
+# ------------------------------------------------------------
+# MESHTASTIC
+# ------------------------------------------------------------
+# Nome do canal lógico utilizado na rede real.
+channel_name = "LongFast"
+
+# Índice do canal, quando aplicável.
+channel_index = 0
+
+# ------------------------------------------------------------
+# ADMINISTRADORES
+# ------------------------------------------------------------
+# Node IDs que terão privilégios administrativos.
+#
+# Exemplo:
+# admins = ["!12345678", "!87654321"]
+#
+# Administradores não podem moderar outros administradores.
+admins = []
+
+# ------------------------------------------------------------
+# CADASTRO DE USUÁRIOS
+# ------------------------------------------------------------
+# true  = novos usuários precisam de autorização
+# false = novos usuários podem ser registrados automaticamente
+registration_requires_admin = true
+
+# ------------------------------------------------------------
+# MODERAÇÃO
+# ------------------------------------------------------------
+# Duração padrão do silêncio, em minutos.
+#
+# 30   = meia hora
+# 60   = uma hora
+# 1440 = 24 horas
+default_silence_minutes = 30
+
+# ------------------------------------------------------------
+# COMANDOS
+# ------------------------------------------------------------
+command_prefix = "/"
+
+# ------------------------------------------------------------
+# TEMPO
+# ------------------------------------------------------------
+weather_location = "Ribeirão Preto, SP"
+
+# ------------------------------------------------------------
+# LOG
+# ------------------------------------------------------------
+# DEBUG, INFO, WARNING ou ERROR
+log_level = "INFO"
