@@ -3,7 +3,7 @@
 from collections import deque
 from collections.abc import Callable
 
-from meshbot.domain.messages import Message
+from meshbot.domain.messages import IncomingMessage, OutgoingMessage
 
 
 class SimulatorTransport:
@@ -11,10 +11,10 @@ class SimulatorTransport:
 
     def __init__(
         self,
-        on_send: Callable[[Message], None] | None = None,
+        on_send: Callable[[OutgoingMessage], None] | None = None,
     ) -> None:
-        self._incoming: deque[Message] = deque()
-        self.sent_messages: list[Message] = []
+        self._incoming: deque[OutgoingMessage] = deque()
+        self.sent_messages: list[OutgoingMessage] = []
         self._on_send = on_send
 
     def receive(self) -> Message | None:
@@ -23,7 +23,7 @@ class SimulatorTransport:
             return None
         return self._incoming.popleft()
 
-    def send(self, message: Message) -> None:
+    def send(self, message: OutgoingMessage) -> None:
         """Store an outgoing message and notify the simulator observer."""
         self.sent_messages.append(message)
         if self._on_send is not None:
@@ -31,4 +31,4 @@ class SimulatorTransport:
 
     def inject_message(self, node_id: str, text: str) -> None:
         """Inject a virtual node message into the simulated network."""
-        self._incoming.append(Message(node_id=node_id, text=text))
+        self._incoming.append(IncomingMessage(sender_id=node_id, text=text))
