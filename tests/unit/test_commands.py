@@ -31,7 +31,7 @@ def test_non_command_message_returns_no_response() -> None:
 def test_tempo_command_formats_four_compact_messages() -> None:
     service = FakeWeatherService(
         WeatherForecast(
-            city="Ituverava",
+            city="Ituverava/SP",
             summary="Nublado c/ pancadas de chuva e trovoadas isoladas.",
             temperature_min=19,
             temperature_max=31,
@@ -46,7 +46,7 @@ def test_tempo_command_formats_four_compact_messages() -> None:
     response = handler.handle(Message(node_id="!12345678", text="!tempo Ituverava"))
 
     assert [message.text for message in response] == [
-        "Ituverava: Nublado c/ pancadas de chuva e trovoadas isoladas.",
+        "Ituverava/SP: Nublado c/ pancadas de chuva e trovoadas isoladas.",
         "Temperatura: 19°C a 31°C",
         "Umidade: 50% a 90%",
         "Vento: NE-N, fracos",
@@ -64,7 +64,7 @@ def test_tempo_command_requires_city() -> None:
 def test_tempo_command_accepts_city_and_uf() -> None:
     service = FakeWeatherService(
         WeatherForecast(
-            city="Ituverava",
+            city="Ituverava/SP",
             summary="Tempo estável.",
             temperature_min=18,
             temperature_max=30,
@@ -78,4 +78,4 @@ def test_tempo_command_accepts_city_and_uf() -> None:
 
     response = handler.handle(Message(node_id="!12345678", text="!tempo Ituverava/SP"))
 
-    assert response[0].text == "Ituverava: Tempo estável."
+    assert response[0].text == "Ituverava/SP: Tempo estável."
