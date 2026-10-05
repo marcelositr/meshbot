@@ -41,10 +41,10 @@ def test_block_notification_targets_user_then_all_admins() -> None:
         "!33333333",
     ]
     assert messages[0].recipient_id == "!22222222"
-    assert messages[0].text == "MeshBot: Você foi bloqueado."
+    assert messages[0].text == "Bloqueado."
     assert [message.recipient_id for message in messages[1:]] == ["!11111111", "!33333333"]
     assert all(
-        message.text == "MeshBot: Admin !11111111 bloqueou !22222222."
+        message.text == "Bloqueio: !11111111>!22222222"
         for message in messages[1:]
     )
 
@@ -61,6 +61,6 @@ def test_silence_notification_includes_duration() -> None:
     messages = notifier.notify("silenced", "!11111111", "!22222222", 15)
 
     assert messages[0].recipient_id == "!22222222"
-    assert messages[0].text == "MeshBot: Você foi silenciado por 15 minutos."
+    assert messages[0].text == "Silenciado: 15min."
     assert messages[1].recipient_id == "!11111111"
-    assert messages[1].text == "MeshBot: Admin !11111111 silenciou !22222222 por 15 minutos."
+    assert messages[1].text == "Silêncio: !11111111>!22222222 15min"
