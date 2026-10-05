@@ -48,7 +48,7 @@ def test_name_command_sets_current_user_name() -> None:
         IncomingMessage(sender_id="!12345678", text="!nome Ana Clara")
     )
 
-    assert response[0].text == "Nome definido como Ana Clara."
+    assert response[0].text == "Nome: Ana Clara."
     assert repository.get("!12345678") == User("!12345678", name="Ana Clara")
 
 
@@ -81,10 +81,10 @@ def test_tempo_command_formats_four_compact_messages() -> None:
     response = handler.handle(IncomingMessage(sender_id="!12345678", text="!tempo Ituverava"))
 
     assert [message.text for message in response] == [
-        "Ituverava/SP: Nublado c/ pancadas de chuva e trovoadas isoladas.",
-        "Temperatura: 19°C a 31°C",
-        "Umidade: 50% a 90%",
-        "Vento: NE-N, fracos",
+        "Ituverava/SP: Nublado c/ pancadas de chuva e trovoadas iso",
+        "Temp: 19-31°C",
+        "Umid: 50-90%",
+        "Vento: NE-N fracos",
     ]
 
 
@@ -149,8 +149,8 @@ def test_block_command_blocks_user() -> None:
     response = handler.handle(IncomingMessage(sender_id="!11111111", text="!bloquear !22222222"))
 
     assert [message.recipient_id for message in response] == ["!22222222", "!11111111"]
-    assert response[0].text == "MeshBot: Você foi bloqueado."
-    assert response[1].text == "MeshBot: Admin !11111111 bloqueou !22222222."
+    assert response[0].text == "Bloqueado."
+    assert response[1].text == "Bloqueio: !11111111>!22222222"
     assert repository.get("!22222222") == User("!22222222", blocked=True)
 
 
@@ -168,8 +168,8 @@ def test_unblock_command_unblocks_user() -> None:
     response = handler.handle(IncomingMessage(sender_id="!11111111", text="!desbloquear !22222222"))
 
     assert [message.recipient_id for message in response] == ["!22222222", "!11111111"]
-    assert response[0].text == "MeshBot: Seu acesso ao MeshBot foi desbloqueado."
-    assert response[1].text == "MeshBot: Admin !11111111 desbloqueou !22222222."
+    assert response[0].text == "Desbloqueado."
+    assert response[1].text == "Desbloqueio: !11111111>!22222222"
     assert repository.get("!22222222") == User("!22222222")
 
 
@@ -189,5 +189,5 @@ def test_silence_command_accepts_custom_duration() -> None:
     )
 
     assert [message.recipient_id for message in response] == ["!22222222", "!11111111"]
-    assert response[0].text == "MeshBot: Você foi silenciado por 15 minutos."
-    assert response[1].text == "MeshBot: Admin !11111111 silenciou !22222222 por 15 minutos."
+    assert response[0].text == "Silenciado: 15min."
+    assert response[1].text == "Silêncio: !11111111>!22222222 15min"
