@@ -104,7 +104,10 @@ class TempoCommand:
             )
 
         return (
-            OutgoingMessage(recipient_id=message.sender_id, text=f"{forecast.city}: {forecast.summary}"),
+            OutgoingMessage(
+                recipient_id=message.sender_id,
+                text=f"{forecast.city}: {forecast.summary}",
+            ),
             OutgoingMessage(
                 recipient_id=message.sender_id,
                 text=f"Temperatura: {forecast.temperature_min}°C a {forecast.temperature_max}°C",
