@@ -53,7 +53,7 @@ class RegisterCommand:
             "already_registered": "Já cadastrado.",
             "admin_required": "Admin apenas.",
             "requester_not_registered": "Não cadastrado.",
-            "invalid_node_id": "Use: !registrar <node_id>",
+            "invalid_node_id": "Use: !registrar node",
         }
         return (OutgoingMessage(recipient_id=message.sender_id, text=responses[result]),)
 
@@ -75,7 +75,7 @@ class NameCommand:
             return (
                 OutgoingMessage(
                     recipient_id=message.sender_id,
-                    text="Use: !nome <nome>",
+                    text="Use: !nome nome",
                 ),
             )
 
@@ -107,7 +107,7 @@ class TempoCommand:
         city = parts[1].strip() if len(parts) == 2 else ""
 
         if not city:
-            return (OutgoingMessage(recipient_id=message.sender_id, text="Use: !tempo <cidade>"),)
+            return (OutgoingMessage(recipient_id=message.sender_id, text="Use: !tempo cidade"),)
 
         try:
             forecast = self._weather_service.get_forecast(city)
@@ -199,7 +199,7 @@ class BlockCommand:
             return (
                 OutgoingMessage(
                     recipient_id=message.sender_id,
-                    text="Use: !bloquear <node_id>",
+                    text="Use: !bloquear node",
                 ),
             )
 
@@ -239,7 +239,7 @@ class UnblockCommand:
             return (
                 OutgoingMessage(
                     recipient_id=message.sender_id,
-                    text="Use: !desbloquear <node_id>",
+                    text="Use: !desbloquear node",
                 ),
             )
 
@@ -280,7 +280,7 @@ class SilenceCommand:
             return (
                 OutgoingMessage(
                     recipient_id=message.sender_id,
-                    text="Use: !silenciar <node_id> [minutos]",
+                    text="Use: !silenciar node [min]",
                 ),
             )
 
