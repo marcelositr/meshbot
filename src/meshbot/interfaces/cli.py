@@ -3,7 +3,9 @@
 from pathlib import Path
 
 from meshbot.application.bot import MeshBot
+from meshbot.application.commands import CommandHandler, PingCommand, TempoCommand
 from meshbot.config import ConfigurationError, load_settings
+from meshbot.infrastructure.inmet_weather import InmetWeatherService
 from meshbot.infrastructure.simulator import SimulatorTransport
 
 
@@ -22,11 +24,25 @@ def main() -> None:
         )
 
     transport = SimulatorTransport()
-    bot = MeshBot(transport, command_prefix=settings.command_prefix)
+    weather_service = InmetWeatherService(
+        timeout_seconds=settings.weather_timeout_seconds,
+        morning_start=settings.weather_morning_start,
+        afternoon_start=settings.weather_afternoon_start,
+        night_start=settings.weather_night_start,
+    )
+    command_handler = CommandHandler(
+        [PingCommand(), TempoCommand(weather_service)],
+        prefix=settings.command_prefix,
+    )
+    bot = MeshBot(
+        transport,
+        command_handler,
+        message_delay_seconds=settings.message_delay_seconds,
+    )
 
     print(f"{settings.name} - simulator")
     print("Digite uma mensagem no formato '<node_id> <mensagem>'.")
-    print("Exemplo: !12345678 /ping")
+    print("Exemplos: !12345678 /ping  |  !12345678 /tempo Ituverava")
     print("Digite 'exit' para sair.")
 
     while True:
@@ -51,6 +67,6 @@ def main() -> None:
         transport.inject_message(node_id, text)
         bot.process_next_message()
 
-        if transport.sent_messages:
+        while transport.sent_messages:
             response = transport.sent_messages.pop(0)
             print(f"{response.node_id} <- {response.text}")
