@@ -1,12 +1,14 @@
 from meshbot.application.commands import (
     BlockCommand,
     CommandHandler,
+    NameCommand,
     PingCommand,
     SilenceCommand,
     TempoCommand,
     UnblockCommand,
 )
 from meshbot.application.moderation import ModerationService
+from meshbot.application.users import UserService
 from meshbot.application.moderation_notifications import ModerationNotifier
 from meshbot.application.weather import WeatherForecast
 from meshbot.domain.messages import IncomingMessage, OutgoingMessage
@@ -36,6 +38,29 @@ def test_non_command_message_returns_no_response() -> None:
     response = handler.handle(IncomingMessage(sender_id="!12345678", text="hello"))
 
     assert response == ()
+
+
+def test_name_command_sets_current_user_name() -> None:
+    repository = InMemoryUsers((User("!12345678"),))
+    handler = CommandHandler([NameCommand(UserService(repository))])
+
+    response = handler.handle(
+        IncomingMessage(sender_id="!12345678", text="!nome Ana Clara")
+    )
+
+    assert response[0].text == "Nome definido como Ana Clara."
+    assert repository.get("!12345678") == User("!12345678", name="Ana Clara")
+
+
+def test_name_command_rejects_invalid_name() -> None:
+    repository = InMemoryUsers((User("!12345678"),))
+    handler = CommandHandler([NameCommand(UserService(repository))])
+
+    response = handler.handle(
+        IncomingMessage(sender_id="!12345678", text="!nome Marcelo 👍")
+    )
+
+    assert response[0].text.startswith("Nome inválido.")
 
 
 def test_tempo_command_formats_four_compact_messages() -> None:
