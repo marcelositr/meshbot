@@ -28,7 +28,9 @@ def test_ping_command_returns_pong() -> None:
 def test_unknown_command_returns_no_response() -> None:
     handler = CommandHandler([PingCommand()])
 
-    response = handler.handle(IncomingMessage(sender_id="!12345678", text="!unknown"))
+    response = handler.handle(
+        IncomingMessage(sender_id="!12345678", text="!unknown")
+    )
 
     assert response == ()
 
@@ -36,7 +38,9 @@ def test_unknown_command_returns_no_response() -> None:
 def test_non_command_message_returns_no_response() -> None:
     handler = CommandHandler([PingCommand()])
 
-    response = handler.handle(IncomingMessage(sender_id="!12345678", text="hello"))
+    response = handler.handle(
+        IncomingMessage(sender_id="!12345678", text="hello")
+    )
 
     assert response == ()
 
@@ -54,7 +58,7 @@ def test_register_command_registers_sender_without_node_id_argument() -> None:
 
 
 def test_register_command_rejects_an_extra_argument() -> None:
-    repository = InMemoryUsers()
+    repository = InMemoryUsers(())
     handler = CommandHandler([RegisterCommand(UserService(repository))])
 
     response = handler.handle(
@@ -103,7 +107,9 @@ def test_tempo_command_formats_four_natural_messages() -> None:
     )
     handler = CommandHandler([TempoCommand(service)])
 
-    response = handler.handle(IncomingMessage(sender_id="!12345678", text="!tempo Ituverava"))
+    response = handler.handle(
+        IncomingMessage(sender_id="!12345678", text="!tempo Ituverava")
+    )
 
     assert [message.text for message in response] == [
         "Ituverava/SP: Nublado c/ pancadas de chuva e trovoadas isoladas.",
@@ -116,7 +122,9 @@ def test_tempo_command_formats_four_natural_messages() -> None:
 def test_tempo_command_requires_city() -> None:
     handler = CommandHandler([TempoCommand(FakeWeatherService())])
 
-    response = handler.handle(IncomingMessage(sender_id="!12345678", text="!tempo"))
+    response = handler.handle(
+        IncomingMessage(sender_id="!12345678", text="!tempo")
+    )
 
     assert response[0].text == "Use: !tempo <cidade>."
 
@@ -136,7 +144,9 @@ def test_tempo_command_accepts_city_and_uf() -> None:
     )
     handler = CommandHandler([TempoCommand(service)])
 
-    response = handler.handle(IncomingMessage(sender_id="!12345678", text="!tempo Ituverava/SP"))
+    response = handler.handle(
+        IncomingMessage(sender_id="!12345678", text="!tempo Ituverava/SP")
+    )
 
     assert response[0].text == "Ituverava/SP: Tempo estável."
 
@@ -171,9 +181,14 @@ def test_block_command_blocks_user() -> None:
         [BlockCommand(ModerationService(repository), ModerationNotifier(repository))]
     )
 
-    response = handler.handle(IncomingMessage(sender_id="!11111111", text="!bloquear !22222222"))
+    response = handler.handle(
+        IncomingMessage(sender_id="!11111111", text="!bloquear !22222222")
+    )
 
-    assert [message.recipient_id for message in response] == ["!22222222", "!11111111"]
+    assert [message.recipient_id for message in response] == [
+        "!22222222",
+        "!11111111",
+    ]
     assert response[0].text == "!22222222, você foi bloqueado."
     assert response[1].text == "O administrador !11111111 bloqueou !22222222."
     assert repository.get("!22222222") == User("!22222222", blocked=True)
@@ -187,12 +202,22 @@ def test_unblock_command_unblocks_user() -> None:
         )
     )
     handler = CommandHandler(
-        [UnblockCommand(ModerationService(repository), ModerationNotifier(repository))]
+        [
+            UnblockCommand(
+                ModerationService(repository),
+                ModerationNotifier(repository),
+            )
+        ]
     )
 
-    response = handler.handle(IncomingMessage(sender_id="!11111111", text="!desbloquear !22222222"))
+    response = handler.handle(
+        IncomingMessage(sender_id="!11111111", text="!desbloquear !22222222")
+    )
 
-    assert [message.recipient_id for message in response] == ["!22222222", "!11111111"]
+    assert [message.recipient_id for message in response] == [
+        "!22222222",
+        "!11111111",
+    ]
     assert response[0].text == "!22222222, você foi desbloqueado."
     assert response[1].text == "O administrador !11111111 desbloqueou !22222222."
     assert repository.get("!22222222") == User("!22222222")
@@ -206,14 +231,18 @@ def test_silence_command_uses_configured_default_duration() -> None:
         )
     )
     service = ModerationService(repository, default_silence_minutes=15)
-    handler = CommandHandler([SilenceCommand(service, ModerationNotifier(repository))])
+    handler = CommandHandler(
+        [SilenceCommand(service, ModerationNotifier(repository))]
+    )
 
     response = handler.handle(
         IncomingMessage(sender_id="!11111111", text="!silenciar !22222222")
     )
 
     assert response[0].text == "!22222222, você foi silenciado por 15 minutos."
-    assert response[1].text == "O administrador !11111111 silenciou !22222222 por 15 minutos."
+    assert response[1].text == (
+        "O administrador !11111111 silenciou !22222222 por 15 minutos."
+    )
 
 
 def test_silence_command_uses_singular_for_one_minute() -> None:
@@ -224,14 +253,18 @@ def test_silence_command_uses_singular_for_one_minute() -> None:
         )
     )
     service = ModerationService(repository, default_silence_minutes=1)
-    handler = CommandHandler([SilenceCommand(service, ModerationNotifier(repository))])
+    handler = CommandHandler(
+        [SilenceCommand(service, ModerationNotifier(repository))]
+    )
 
     response = handler.handle(
         IncomingMessage(sender_id="!11111111", text="!silenciar !22222222")
     )
 
     assert response[0].text == "!22222222, você foi silenciado por 1 minuto."
-    assert response[1].text == "O administrador !11111111 silenciou !22222222 por 1 minuto."
+    assert response[1].text == (
+        "O administrador !11111111 silenciou !22222222 por 1 minuto."
+    )
 
 
 def test_silence_command_accepts_custom_duration() -> None:
@@ -249,9 +282,14 @@ def test_silence_command_accepts_custom_duration() -> None:
         IncomingMessage(sender_id="!11111111", text="!silenciar !22222222 15")
     )
 
-    assert [message.recipient_id for message in response] == ["!22222222", "!11111111"]
+    assert [message.recipient_id for message in response] == [
+        "!22222222",
+        "!11111111",
+    ]
     assert response[0].text == "!22222222, você foi silenciado por 15 minutos."
-    assert response[1].text == "O administrador !11111111 silenciou !22222222 por 15 minutos."
+    assert response[1].text == (
+        "O administrador !11111111 silenciou !22222222 por 15 minutos."
+    )
 
 
 def test_name_command_normalizes_response_spaces() -> None:
@@ -259,7 +297,10 @@ def test_name_command_normalizes_response_spaces() -> None:
     handler = CommandHandler([NameCommand(UserService(repository))])
 
     response = handler.handle(
-        IncomingMessage(sender_id="!12345678", text="!nome Vanessa   da   Mata")
+        IncomingMessage(
+            sender_id="!12345678",
+            text="!nome Vanessa   da   Mata",
+        )
     )
 
     assert response[0].text == "Seu nome agora é Vanessa da Mata."
