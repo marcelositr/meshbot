@@ -5,6 +5,7 @@ from pathlib import Path
 from meshbot.application.bot import MeshBot
 from meshbot.application.commands import CommandHandler, PingCommand, TempoCommand
 from meshbot.config import ConfigurationError, load_settings
+from meshbot.domain.messages import Message
 from meshbot.infrastructure.inmet_weather import InmetWeatherService
 from meshbot.infrastructure.simulator import SimulatorTransport
 
@@ -23,7 +24,10 @@ def main() -> None:
             'The local chat requires transport = "simulator" in config/config.toml.'
         )
 
-    transport = SimulatorTransport()
+    def display_message(message: Message) -> None:
+        print(f"{message.node_id} <- {message.text}")
+
+    transport = SimulatorTransport(on_send=display_message)
     weather_service = InmetWeatherService(
         timeout_seconds=settings.weather_timeout_seconds,
         morning_start=settings.weather_morning_start,
@@ -66,7 +70,4 @@ def main() -> None:
 
         transport.inject_message(node_id, text)
         bot.process_next_message()
-
-        while transport.sent_messages:
-            response = transport.sent_messages.pop(0)
-            print(f"{response.node_id} <- {response.text}")
+        transport.sent_messages.clear()
