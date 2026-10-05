@@ -1,6 +1,6 @@
 """Integration tests for SQLite user persistence."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from meshbot.domain.users import User, UserRole
 from meshbot.infrastructure.sqlite_users import SQLiteUserRepository
@@ -12,7 +12,7 @@ def test_sqlite_repository_round_trips_user(tmp_path) -> None:
         node_id="!12345678",
         role=UserRole.ADMIN,
         blocked=True,
-        silenced_until=datetime(2026, 10, 5, 15, 30, tzinfo=timezone.utc),
+        silenced_until=datetime(2026, 10, 5, 15, 30, tzinfo=UTC),
     )
 
     repository.save(user)
