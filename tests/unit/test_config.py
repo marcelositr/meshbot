@@ -4,7 +4,6 @@ import pytest
 
 from meshbot.config import ConfigurationError, Settings, load_settings
 
-
 VALID_CONFIG = """
 environment = "development"
 name = "MeshBot"
