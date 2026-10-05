@@ -20,9 +20,8 @@ class FakeWeatherService:
 
     def get_forecast(self, city: str) -> WeatherForecast:
         """Return the configured forecast using the requested city name."""
-        requested_city = city.split("/", maxsplit=1)[0].strip()
         return WeatherForecast(
-            city=requested_city,
+            city=self._forecast.city,
             summary=self._forecast.summary,
             temperature_min=self._forecast.temperature_min,
             temperature_max=self._forecast.temperature_max,
