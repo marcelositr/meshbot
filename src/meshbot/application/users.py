@@ -2,7 +2,7 @@
 
 from typing import Protocol
 
-from meshbot.domain.users import User, UserRole
+from meshbot.domain.users import User, UserRole, normalize_user_name
 
 
 class UserRepository(Protocol):
@@ -32,10 +32,15 @@ class UserService:
         self._repository = repository
         self._registration_requires_admin = registration_requires_admin
 
-    def register(self, requester_id: str, node_id: str) -> str:
-        """Register a node and return the result code."""
+    def register(self, requester_id: str, node_id: str, name: str) -> str:
+        """Register a node with a display name and return the result code."""
         if not node_id.strip():
             return "invalid_node_id"
+
+        try:
+            normalized_name = normalize_user_name(name)
+        except ValueError:
+            return "invalid_name"
 
         requester = self._repository.get(requester_id)
         if requester is None:
@@ -47,5 +52,10 @@ class UserService:
         if self._repository.get(node_id) is not None:
             return "already_registered"
 
-        self._repository.save(User(node_id=node_id))
+        self._repository.save(
+            User(
+                node_id=node_id,
+                name=normalized_name,
+            )
+        )
         return "registered"
