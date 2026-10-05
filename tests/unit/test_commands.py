@@ -7,6 +7,7 @@ from meshbot.application.commands import (
     UnblockCommand,
 )
 from meshbot.application.moderation import ModerationService
+from meshbot.application.moderation_notifications import ModerationNotifier
 from meshbot.application.weather import WeatherForecast
 from meshbot.domain.messages import Message
 from meshbot.domain.users import User, UserRole
@@ -116,11 +117,15 @@ def test_block_command_blocks_user() -> None:
             User("!22222222"),
         )
     )
-    handler = CommandHandler([BlockCommand(ModerationService(repository))])
+    handler = CommandHandler(
+        [BlockCommand(ModerationService(repository), ModerationNotifier(repository))]
+    )
 
     response = handler.handle(Message(node_id="!11111111", text="!bloquear !22222222"))
 
-    assert response[0].text == "Usuário !22222222 bloqueado."
+    assert [message.node_id for message in response] == ["!22222222", "!11111111"]
+    assert response[0].text == "MeshBot: Você foi bloqueado."
+    assert response[1].text == "MeshBot: Admin !11111111 bloqueou !22222222."
     assert repository.get("!22222222") == User("!22222222", blocked=True)
 
 
@@ -131,11 +136,15 @@ def test_unblock_command_unblocks_user() -> None:
             User("!22222222", blocked=True),
         )
     )
-    handler = CommandHandler([UnblockCommand(ModerationService(repository))])
+    handler = CommandHandler(
+        [UnblockCommand(ModerationService(repository), ModerationNotifier(repository))]
+    )
 
     response = handler.handle(Message(node_id="!11111111", text="!desbloquear !22222222"))
 
-    assert response[0].text == "Usuário !22222222 desbloqueado."
+    assert [message.node_id for message in response] == ["!22222222", "!11111111"]
+    assert response[0].text == "MeshBot: Seu acesso ao MeshBot foi desbloqueado."
+    assert response[1].text == "MeshBot: Admin !11111111 desbloqueou !22222222."
     assert repository.get("!22222222") == User("!22222222")
 
 
@@ -146,8 +155,12 @@ def test_silence_command_accepts_custom_duration() -> None:
             User("!22222222"),
         )
     )
-    handler = CommandHandler([SilenceCommand(ModerationService(repository))])
+    handler = CommandHandler(
+        [SilenceCommand(ModerationService(repository), ModerationNotifier(repository))]
+    )
 
     response = handler.handle(Message(node_id="!11111111", text="!silenciar !22222222 15"))
 
-    assert response[0].text == "Usuário !22222222 silenciado por 15 minutos."
+    assert [message.node_id for message in response] == ["!22222222", "!11111111"]
+    assert response[0].text == "MeshBot: Você foi silenciado por 15 minutos."
+    assert response[1].text == "MeshBot: Admin !11111111 silenciou !22222222 por 15 minutos."
