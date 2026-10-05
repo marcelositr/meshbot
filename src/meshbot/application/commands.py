@@ -3,6 +3,7 @@
 from typing import Protocol
 
 from meshbot.application.moderation import ModerationService
+from meshbot.application.moderation_notifications import ModerationNotifier
 from meshbot.application.users import UserService
 from meshbot.application.weather import (
     AmbiguousCityError,
@@ -148,8 +149,13 @@ class BlockCommand:
 
     name = "bloquear"
 
-    def __init__(self, moderation_service: ModerationService) -> None:
+    def __init__(
+        self,
+        moderation_service: ModerationService,
+        notifier: ModerationNotifier,
+    ) -> None:
         self._moderation_service = moderation_service
+        self._notifier = notifier
 
     def execute(self, message: Message) -> tuple[Message, ...]:
         """Block the requested user."""
@@ -165,8 +171,10 @@ class BlockCommand:
             )
 
         result = self._moderation_service.block(message.node_id, target_id)
+        if result == "blocked":
+            return self._notifier.notify("blocked", message.node_id, target_id)
+
         responses = {
-            "blocked": f"Usuário {target_id} bloqueado.",
             "already_blocked": f"Usuário {target_id} já está bloqueado.",
             "admin_required": "Apenas administradores podem moderar usuários.",
             "requester_not_registered": "Usuário não cadastrado.",
@@ -198,8 +206,10 @@ class UnblockCommand:
             )
 
         result = self._moderation_service.unblock(message.node_id, target_id)
+        if result == "unblocked":
+            return self._notifier.notify("unblocked", message.node_id, target_id)
+
         responses = {
-            "unblocked": f"Usuário {target_id} desbloqueado.",
             "not_blocked": f"Usuário {target_id} não está bloqueado.",
             "admin_required": "Apenas administradores podem moderar usuários.",
             "requester_not_registered": "Usuário não cadastrado.",
@@ -253,8 +263,15 @@ class SilenceCommand:
             if minutes is not None
             else self._moderation_service.default_silence_minutes
         )
+        if result == "silenced":
+            return self._notifier.notify(
+                "silenced",
+                message.node_id,
+                target_id,
+                duration,
+            )
+
         responses = {
-            "silenced": f"Usuário {target_id} silenciado por {duration} minutos.",
             "invalid_minutes": "O tempo de silêncio deve ser maior que zero.",
             "admin_required": "Apenas administradores podem moderar usuários.",
             "requester_not_registered": "Usuário não cadastrado.",
