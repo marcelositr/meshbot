@@ -6,6 +6,7 @@ from collections.abc import Callable
 from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.commands import CommandHandler
 from meshbot.application.ports import MessageTransport
+from meshbot.domain.messages import OutgoingMessage
 
 
 class MeshBot:
