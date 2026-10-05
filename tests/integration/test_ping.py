@@ -1,10 +1,11 @@
 from meshbot.application.bot import MeshBot
+from meshbot.application.commands import CommandHandler, PingCommand
 from meshbot.infrastructure.simulator import SimulatorTransport
 
 
 def test_simulator_ping_round_trip() -> None:
     transport = SimulatorTransport()
-    bot = MeshBot(transport)
+    bot = MeshBot(transport, CommandHandler([PingCommand()]))
 
     transport.inject_message("!12345678", "/ping")
 
@@ -16,7 +17,7 @@ def test_simulator_ping_round_trip() -> None:
 
 def test_unknown_command_does_not_generate_response() -> None:
     transport = SimulatorTransport()
-    bot = MeshBot(transport)
+    bot = MeshBot(transport, CommandHandler([PingCommand()]))
 
     transport.inject_message("!12345678", "/unknown")
 
@@ -26,6 +27,6 @@ def test_unknown_command_does_not_generate_response() -> None:
 
 def test_empty_transport_reports_no_message() -> None:
     transport = SimulatorTransport()
-    bot = MeshBot(transport)
+    bot = MeshBot(transport, CommandHandler([PingCommand()]))
 
     assert bot.process_next_message() is False
