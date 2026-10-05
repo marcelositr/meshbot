@@ -20,7 +20,7 @@ class SQLiteUserRepository:
         with self._connect() as connection:
             row = connection.execute(
                 """
-                SELECT node_id, role, blocked, silenced_until
+                SELECT node_id, name, role, blocked, silenced_until
                 FROM users
                 WHERE node_id = ?
                 """,
@@ -35,21 +35,27 @@ class SQLiteUserRepository:
     def save(self, user: User) -> None:
         """Create or update a registered user."""
         silenced_until = (
-            user.silenced_until.isoformat() if user.silenced_until is not None else None
+            user.silenced_until.isoformat()
+            if user.silenced_until is not None
+            else None
         )
 
         with self._connect() as connection:
             connection.execute(
                 """
-                INSERT INTO users (node_id, role, blocked, silenced_until)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO users (
+                    node_id, name, role, blocked, silenced_until
+                )
+                VALUES (?, ?, ?, ?, ?)
                 ON CONFLICT(node_id) DO UPDATE SET
+                    name = excluded.name,
                     role = excluded.role,
                     blocked = excluded.blocked,
                     silenced_until = excluded.silenced_until
                 """,
                 (
                     user.node_id,
+                    user.name,
                     user.role.value,
                     int(user.blocked),
                     silenced_until,
@@ -61,7 +67,7 @@ class SQLiteUserRepository:
         with self._connect() as connection:
             rows = connection.execute(
                 """
-                SELECT node_id, role, blocked, silenced_until
+                SELECT node_id, name, role, blocked, silenced_until
                 FROM users
                 ORDER BY node_id
                 """
@@ -75,6 +81,7 @@ class SQLiteUserRepository:
                 """
                 CREATE TABLE IF NOT EXISTS users (
                     node_id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL DEFAULT 'Sem nome',
                     role TEXT NOT NULL CHECK(role IN ('user', 'admin')),
                     blocked INTEGER NOT NULL CHECK(blocked IN (0, 1)),
                     silenced_until TEXT
@@ -82,23 +89,46 @@ class SQLiteUserRepository:
                 """
             )
 
+            columns = {
+                row[1]
+                for row in connection.execute(
+                    "PRAGMA table_info(users)"
+                ).fetchall()
+            }
+
+            if "name" not in columns:
+                connection.execute(
+                    """
+                    ALTER TABLE users
+                    ADD COLUMN name TEXT NOT NULL DEFAULT 'Sem nome'
+                    """
+                )
+
     def _connect(self) -> sqlite3.Connection:
         return sqlite3.connect(self._database_path)
 
     @staticmethod
     def _row_to_user(row: tuple[object, ...]) -> User:
-        node_id, role, blocked, silenced_until = row
+        node_id, name, role, blocked, silenced_until = row
+
         if not isinstance(node_id, str):
             raise ValueError("Invalid node_id stored in users table.")
+
+        if not isinstance(name, str):
+            raise ValueError("Invalid name stored in users table.")
+
         if not isinstance(role, str):
             raise ValueError("Invalid role stored in users table.")
+
         if not isinstance(blocked, int):
             raise ValueError("Invalid blocked value stored in users table.")
+
         if silenced_until is not None and not isinstance(silenced_until, str):
             raise ValueError("Invalid silenced_until value stored in users table.")
 
         return User(
             node_id=node_id,
+            name=name,
             role=UserRole(role),
             blocked=bool(blocked),
             silenced_until=(
