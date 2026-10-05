@@ -48,7 +48,7 @@ def test_name_command_sets_current_user_name() -> None:
         IncomingMessage(sender_id="!12345678", text="!nome Ana Clara")
     )
 
-    assert response[0].text == "Nome: Ana Clara."
+    assert response[0].text == "Seu nome agora é Ana Clara."
     assert repository.get("!12345678") == User("!12345678", name="Ana Clara")
 
 
@@ -93,7 +93,7 @@ def test_tempo_command_requires_city() -> None:
 
     response = handler.handle(IncomingMessage(sender_id="!12345678", text="!tempo"))
 
-    assert response[0].text == "Use: !tempo <cidade>"
+    assert response[0].text == "Use: !tempo <cidade>."
 
 
 def test_tempo_command_accepts_city_and_uf() -> None:
@@ -149,8 +149,8 @@ def test_block_command_blocks_user() -> None:
     response = handler.handle(IncomingMessage(sender_id="!11111111", text="!bloquear !22222222"))
 
     assert [message.recipient_id for message in response] == ["!22222222", "!11111111"]
-    assert response[0].text == "Bloqueado."
-    assert response[1].text == "Bloqueio: !11111111>!22222222"
+    assert response[0].text == "!22222222, você foi bloqueado."
+    assert response[1].text == "O administrador !11111111 bloqueou !22222222."
     assert repository.get("!22222222") == User("!22222222", blocked=True)
 
 
@@ -168,8 +168,8 @@ def test_unblock_command_unblocks_user() -> None:
     response = handler.handle(IncomingMessage(sender_id="!11111111", text="!desbloquear !22222222"))
 
     assert [message.recipient_id for message in response] == ["!22222222", "!11111111"]
-    assert response[0].text == "Desbloqueado."
-    assert response[1].text == "Desbloqueio: !11111111>!22222222"
+    assert response[0].text == "!22222222, você foi desbloqueado."
+    assert response[1].text == "O administrador !11111111 desbloqueou !22222222."
     assert repository.get("!22222222") == User("!22222222")
 
 
@@ -189,8 +189,8 @@ def test_silence_command_accepts_custom_duration() -> None:
     )
 
     assert [message.recipient_id for message in response] == ["!22222222", "!11111111"]
-    assert response[0].text == "Silenciado: 15min."
-    assert response[1].text == "Silêncio: !11111111>!22222222 15min"
+    assert response[0].text == "!22222222, você foi silenciado por 15 minutos."
+    assert response[1].text == "O administrador !11111111 silenciou !22222222 por 15 minutos."
 
 
 def test_name_command_normalizes_response_spaces() -> None:
@@ -201,4 +201,4 @@ def test_name_command_normalizes_response_spaces() -> None:
         IncomingMessage(sender_id="!12345678", text="!nome Vanessa   da   Mata")
     )
 
-    assert response[0].text == "Nome: Vanessa da Mata."
+    assert response[0].text == "Seu nome agora é Vanessa da Mata."
