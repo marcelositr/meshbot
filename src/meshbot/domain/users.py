@@ -1,9 +1,9 @@
 """User entities and authorization roles."""
 
+import unicodedata
 from dataclasses import dataclass
 from datetime import datetime
 from enum import StrEnum
-import unicodedata
 
 
 MAX_USER_NAME_LENGTH = 60
