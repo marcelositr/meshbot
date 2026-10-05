@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-import gzip
-import json
 import re
 import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, time
 from typing import Any
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+import requests
 
 from meshbot.application.weather import (
     AmbiguousCityError,
@@ -18,6 +15,15 @@ from meshbot.application.weather import (
     WeatherForecast,
     WeatherServiceUnavailableError,
 )
+
+
+_HTTP_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (X11; Linux x86_64; rv:142.0) "
+        "Gecko/20100101 Firefox/142.0"
+    ),
+    "Accept": "application/json,text/plain,*/*",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,15 +70,15 @@ class IBGECityResolver:
         if self._municipalities is not None:
             return self._municipalities
 
-        request = Request(
-            self.URL,
-            headers={"User-Agent": "MeshBot/0.1", "Accept": "application/json"},
-        )
-
         try:
-            with urlopen(request, timeout=self._timeout_seconds) as response:
-                data = _load_json_response(response)
-        except (HTTPError, URLError, TimeoutError) as exc:
+            response = requests.get(
+                self.URL,
+                headers=_HTTP_HEADERS,
+                timeout=self._timeout_seconds,
+            )
+            response.raise_for_status()
+            data = response.json()
+        except requests.RequestException as exc:
             raise WeatherServiceUnavailableError(
                 "Unable to retrieve the IBGE municipality list."
             ) from exc
@@ -137,15 +143,15 @@ class InmetWeatherService:
         return municipality.code, municipality.name
 
     def _fetch(self, code: int) -> dict[str, Any]:
-        request = Request(
-            f"{self.URL}/{code}",
-            headers={"User-Agent": "MeshBot/0.1", "Accept": "application/json"},
-        )
-
         try:
-            with urlopen(request, timeout=self._timeout_seconds) as response:
-                data = _load_json_response(response)
-        except (HTTPError, URLError, TimeoutError) as exc:
+            response = requests.get(
+                f"{self.URL}/{code}",
+                headers=_HTTP_HEADERS,
+                timeout=self._timeout_seconds,
+            )
+            response.raise_for_status()
+            data = response.json()
+        except requests.RequestException as exc:
             raise WeatherServiceUnavailableError(
                 "Unable to retrieve the INMET forecast."
             ) from exc
@@ -164,13 +170,6 @@ class InmetWeatherService:
         if self._afternoon_start <= current < self._night_start:
             return "tarde"
         return "noite"
-
-
-def _load_json_response(response: Any) -> Any:
-    content = response.read()
-    if response.headers.get("Content-Encoding", "").lower() == "gzip":
-        content = gzip.decompress(content)
-    return json.loads(content)
 
 
 def _normalize(value: str) -> str:
