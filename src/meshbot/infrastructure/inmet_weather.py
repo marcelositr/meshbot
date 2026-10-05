@@ -45,7 +45,7 @@ class IBGECityResolver:
         self._municipalities: tuple[Municipality, ...] | None = None
 
     def resolve(self, query: str) -> Municipality:
-        """Resolve a city name, optionally followed by '- UF'."""
+        """Resolve a city name, optionally followed by '/UF'."""
         city_name, uf = _split_city_and_uf(query)
         normalized_name = _normalize(city_name)
         normalized_uf = _normalize(uf) if uf else None
@@ -61,7 +61,7 @@ class IBGECityResolver:
             raise CityNotFoundError(city_name)
 
         if len(matches) > 1:
-            choices = tuple(f"{item.name} - {item.uf}" for item in matches)
+            choices = tuple(f"{item.name}/{item.uf}" for item in matches)
             raise AmbiguousCityError(choices)
 
         return matches[0]
@@ -180,7 +180,7 @@ def _normalize(value: str) -> str:
 
 
 def _split_city_and_uf(value: str) -> tuple[str, str | None]:
-    match = re.fullmatch(r"\s*(.*?)\s*-\s*([A-Za-z]{2})\s*", value)
+    match = re.fullmatch(r"\s*(.*?)\s*/\s*([A-Za-z]{2})\s*", value)
     if match is None:
         return value.strip(), None
     return match.group(1).strip(), match.group(2).upper()
