@@ -15,6 +15,7 @@ from meshbot.application.weather import (
     AmbiguousCityError,
     CityNotFoundError,
     WeatherForecast,
+    WeatherServiceUnavailableError,
 )
 
 
@@ -71,10 +72,14 @@ class IBGECityResolver:
             with urlopen(request, timeout=self._timeout_seconds) as response:
                 data = json.load(response)
         except (HTTPError, URLError, TimeoutError) as exc:
-            raise RuntimeError("Unable to retrieve the IBGE municipality list.") from exc
+            raise WeatherServiceUnavailableError(
+                "Unable to retrieve the IBGE municipality list."
+            ) from exc
 
         if not isinstance(data, list):
-            raise RuntimeError("IBGE returned an unexpected municipality response.")
+            raise WeatherServiceUnavailableError(
+                "IBGE returned an unexpected municipality response."
+            )
 
         self._municipalities = tuple(_parse_municipality(item) for item in data)
         return self._municipalities
@@ -102,20 +107,25 @@ class InmetWeatherService:
     def get_forecast(self, city: str) -> WeatherForecast:
         """Resolve a city or IBGE code and return the current period."""
         code, requested_city = self._resolve_code(city)
-        data = self._fetch(code)
-        daily = data[str(code)][datetime.now().strftime("%d/%m/%Y")]
-        forecast = daily.get(self._current_period(), daily)
 
-        return WeatherForecast(
-            city=str(forecast.get("entidade", requested_city)),
-            summary=str(forecast["resumo"]).rstrip(".") + ".",
-            temperature_min=int(forecast["temp_min"]),
-            temperature_max=int(forecast["temp_max"]),
-            humidity_min=int(forecast["umidade_min"]),
-            humidity_max=int(forecast["umidade_max"]),
-            wind_direction=str(forecast["dir_vento"]),
-            wind_intensity=str(forecast["int_vento"]).lower(),
-        )
+        try:
+            data = self._fetch(code)
+            daily = data[str(code)][datetime.now().strftime("%d/%m/%Y")]
+            forecast = daily.get(self._current_period(), daily)
+            return WeatherForecast(
+                city=str(forecast.get("entidade", requested_city)),
+                summary=str(forecast["resumo"]).rstrip(".") + ".",
+                temperature_min=int(forecast["temp_min"]),
+                temperature_max=int(forecast["temp_max"]),
+                humidity_min=int(forecast["umidade_min"]),
+                humidity_max=int(forecast["umidade_max"]),
+                wind_direction=str(forecast["dir_vento"]),
+                wind_intensity=str(forecast["int_vento"]).lower(),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise WeatherServiceUnavailableError(
+                "INMET returned an unexpected forecast response."
+            ) from exc
 
     def _resolve_code(self, city: str) -> tuple[int, str]:
         match = re.fullmatch(r"ibge\s+(\d+)", city.strip(), flags=re.IGNORECASE)
@@ -135,10 +145,14 @@ class InmetWeatherService:
             with urlopen(request, timeout=self._timeout_seconds) as response:
                 data = json.load(response)
         except (HTTPError, URLError, TimeoutError) as exc:
-            raise RuntimeError("Unable to retrieve the INMET forecast.") from exc
+            raise WeatherServiceUnavailableError(
+                "Unable to retrieve the INMET forecast."
+            ) from exc
 
         if not isinstance(data, dict):
-            raise RuntimeError("INMET returned an unexpected response.")
+            raise WeatherServiceUnavailableError(
+                "INMET returned an unexpected response."
+            )
 
         return data
 
@@ -171,7 +185,9 @@ def _parse_municipality(data: Any) -> Municipality:
         name = str(data["nome"])
         uf = str(data["microrregiao"]["mesorregiao"]["UF"]["sigla"])
     except (KeyError, TypeError, ValueError) as exc:
-        raise RuntimeError("IBGE returned an unexpected municipality response.") from exc
+        raise WeatherServiceUnavailableError(
+            "IBGE returned an unexpected municipality response."
+        ) from exc
     return Municipality(code=code, name=name, uf=uf)
 
 
