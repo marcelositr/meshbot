@@ -51,6 +51,7 @@ def main() -> None:
             user_repository.save(
                 User(
                     node_id=existing.node_id,
+                    name=existing.name,
                     role=UserRole.ADMIN,
                     blocked=existing.blocked,
                     silenced_until=existing.silenced_until,
