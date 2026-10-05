@@ -24,7 +24,23 @@ class UserRepository(Protocol):
 class UserService:
     """Apply application rules for registering users."""
 
-    def __init__(self, repository: UserRepository) -> None:\n        self._repository = repository\n\n    def register(self, requester_id: str) -> str:\n        """Register the requesting node itself."""\n        try:\n            node_id = normalize_node_id(requester_id)\n        except ValueError:\n            return "invalid_node_id"\n\n        if self._repository.get(node_id) is not None:\n            return "already_registered"\n\n        self._repository.save(User(node_id=node_id))\n        return "registered"\n\n    def set_name(self, requester_id: str, name: str) -> str:
+    def __init__(self, repository: UserRepository) -> None:
+        self._repository = repository
+
+    def register(self, requester_id: str) -> str:
+        """Register the requesting node itself."""
+        try:
+            node_id = normalize_node_id(requester_id)
+        except ValueError:
+            return "invalid_node_id"
+
+        if self._repository.get(node_id) is not None:
+            return "already_registered"
+
+        self._repository.save(User(node_id=node_id))
+        return "registered"
+
+    def set_name(self, requester_id: str, name: str) -> str:
         """Set or replace the requester's display name."""
         requester = self._repository.get(requester_id)
         if requester is None:
