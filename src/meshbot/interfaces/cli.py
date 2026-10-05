@@ -2,11 +2,14 @@
 
 from pathlib import Path
 
+from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.bot import MeshBot
 from meshbot.application.commands import CommandHandler, PingCommand, TempoCommand
 from meshbot.config import ConfigurationError, load_settings
 from meshbot.domain.messages import Message
+from meshbot.domain.users import User, UserRole
 from meshbot.infrastructure.inmet_weather import InmetWeatherService
+from meshbot.infrastructure.sqlite_users import SQLiteUserRepository
 from meshbot.infrastructure.simulator import SimulatorTransport
 
 
@@ -27,6 +30,10 @@ def main() -> None:
     def display_message(message: Message) -> None:
         print(f"{message.node_id} <- {message.text}")
 
+    user_repository = SQLiteUserRepository(Path(settings.database_path))
+    for node_id in settings.admins:
+        user_repository.save(User(node_id=node_id, role=UserRole.ADMIN))
+
     transport = SimulatorTransport(on_send=display_message)
     weather_service = InmetWeatherService(
         timeout_seconds=settings.weather_timeout_seconds,
@@ -41,6 +48,7 @@ def main() -> None:
     bot = MeshBot(
         transport,
         command_handler,
+        authorization=AuthorizationPolicy(user_repository),
         message_delay_seconds=settings.message_delay_seconds,
     )
 
