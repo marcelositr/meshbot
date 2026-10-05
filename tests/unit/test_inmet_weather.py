@@ -4,7 +4,7 @@ from meshbot.infrastructure.inmet_weather import IBGECityResolver, Municipality
 
 def test_city_resolver_ignores_case_and_accents() -> None:
     resolver = IBGECityResolver()
-    resolver._municipalities = (  # type: ignore[attr-defined]
+    resolver._municipalities = (
         Municipality(code=3524105, name="Ituverava", uf="SP"),
     )
 
@@ -15,7 +15,7 @@ def test_city_resolver_ignores_case_and_accents() -> None:
 
 def test_city_resolver_accepts_uf_for_ambiguous_names() -> None:
     resolver = IBGECityResolver()
-    resolver._municipalities = (  # type: ignore[attr-defined]
+    resolver._municipalities = (
         Municipality(code=1, name="Santa Rita", uf="MG"),
         Municipality(code=2, name="Santa Rita", uf="PB"),
     )
@@ -27,7 +27,7 @@ def test_city_resolver_accepts_uf_for_ambiguous_names() -> None:
 
 def test_city_resolver_rejects_ambiguous_name_without_uf() -> None:
     resolver = IBGECityResolver()
-    resolver._municipalities = (  # type: ignore[attr-defined]
+    resolver._municipalities = (
         Municipality(code=1, name="Santa Rita", uf="MG"),
         Municipality(code=2, name="Santa Rita", uf="PB"),
     )
