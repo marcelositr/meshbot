@@ -3,6 +3,7 @@ from meshbot.application.commands import (
     CommandHandler,
     NameCommand,
     PingCommand,
+    RegisterCommand,
     SilenceCommand,
     TempoCommand,
     UnblockCommand,
@@ -38,6 +39,30 @@ def test_non_command_message_returns_no_response() -> None:
     response = handler.handle(IncomingMessage(sender_id="!12345678", text="hello"))
 
     assert response == ()
+
+
+def test_register_command_registers_sender_without_node_id_argument() -> None:
+    repository = InMemoryUsers()
+    handler = CommandHandler([RegisterCommand(UserService(repository))])
+
+    response = handler.handle(
+        IncomingMessage(sender_id="!12345678", text="!registrar")
+    )
+
+    assert response[0].text == "Cadastro realizado."
+    assert repository.get("!12345678") == User("!12345678")
+
+
+def test_register_command_rejects_an_extra_argument() -> None:
+    repository = InMemoryUsers()
+    handler = CommandHandler([RegisterCommand(UserService(repository))])
+
+    response = handler.handle(
+        IncomingMessage(sender_id="!12345678", text="!registrar !87654321")
+    )
+
+    assert response[0].text == "Use: !registrar."
+    assert repository.get("!87654321") is None
 
 
 def test_name_command_sets_current_user_name() -> None:
