@@ -117,3 +117,28 @@ def test_invalid_silence_duration_is_rejected() -> None:
 
     assert service.silence("!11111111", "!22222222", 0) == "invalid_minutes"
     assert repository.get("!22222222") == User("!22222222")
+
+
+def test_admin_can_unblock_user_preserves_name() -> None:
+    service, repository = make_service(
+        User("!11111111", role=UserRole.ADMIN),
+        User("!22222222", name="Ana Clara", blocked=True),
+    )
+
+    assert service.unblock("!11111111", "!22222222") == "unblocked"
+    assert repository.get("!22222222") == User("!22222222", name="Ana Clara")
+
+
+def test_admin_can_silence_user_preserves_name() -> None:
+    now = datetime(2026, 10, 5, 15, 0, tzinfo=UTC)
+    service, repository = make_service(
+        User("!11111111", role=UserRole.ADMIN),
+        User("!22222222", name="Ana Clara"),
+    )
+
+    assert service.silence("!11111111", "!22222222", 15, now) == "silenced"
+    assert repository.get("!22222222") == User(
+        "!22222222",
+        name="Ana Clara",
+        silenced_until=datetime(2026, 10, 5, 15, 15, tzinfo=UTC),
+    )
