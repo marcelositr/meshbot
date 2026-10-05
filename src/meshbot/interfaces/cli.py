@@ -43,7 +43,13 @@ def main() -> None:
         night_start=settings.weather_night_start,
     )
     command_handler = CommandHandler(
-        [PingCommand(), RegisterCommand(UserService(user_repository, settings.registration_requires_admin)), TempoCommand(weather_service)],
+        [
+            PingCommand(),
+            RegisterCommand(
+                UserService(user_repository, settings.registration_requires_admin)
+            ),
+            TempoCommand(weather_service),
+        ],
         prefix=settings.command_prefix,
     )
     bot = MeshBot(
