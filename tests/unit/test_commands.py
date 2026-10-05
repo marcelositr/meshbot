@@ -198,6 +198,42 @@ def test_unblock_command_unblocks_user() -> None:
     assert repository.get("!22222222") == User("!22222222")
 
 
+def test_silence_command_uses_configured_default_duration() -> None:
+    repository = InMemoryUsers(
+        (
+            User("!11111111", role=UserRole.ADMIN),
+            User("!22222222"),
+        )
+    )
+    service = ModerationService(repository, default_silence_minutes=15)
+    handler = CommandHandler([SilenceCommand(service, ModerationNotifier(repository))])
+
+    response = handler.handle(
+        IncomingMessage(sender_id="!11111111", text="!silenciar !22222222")
+    )
+
+    assert response[0].text == "!22222222, você foi silenciado por 15 minutos."
+    assert response[1].text == "O administrador !11111111 silenciou !22222222 por 15 minutos."
+
+
+def test_silence_command_uses_singular_for_one_minute() -> None:
+    repository = InMemoryUsers(
+        (
+            User("!11111111", role=UserRole.ADMIN),
+            User("!22222222"),
+        )
+    )
+    service = ModerationService(repository, default_silence_minutes=1)
+    handler = CommandHandler([SilenceCommand(service, ModerationNotifier(repository))])
+
+    response = handler.handle(
+        IncomingMessage(sender_id="!11111111", text="!silenciar !22222222")
+    )
+
+    assert response[0].text == "!22222222, você foi silenciado por 1 minuto."
+    assert response[1].text == "O administrador !11111111 silenciou !22222222 por 1 minuto."
+
+
 def test_silence_command_accepts_custom_duration() -> None:
     repository = InMemoryUsers(
         (
