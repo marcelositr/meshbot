@@ -21,6 +21,27 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
+Configure the simulator:
+
+```bash
+cp config/config.example.toml config/config.toml
+```
+
+Run the local simulator:
+
+```bash
+python3 -m meshbot
+```
+
+The simulator accepts messages such as:
+
+```text
+!12345678 /ping
+!12345678 /tempo Ituverava
+```
+
+The `/tempo` command resolves the municipality by name, accepts `Cidade - UF` for ambiguous names, and supports `/tempo ibge <codigo>` as a fallback.
+
 Run tests:
 
 ```bash
@@ -37,5 +58,7 @@ mypy src
 ## Configuration
 
 Copy `config/config.example.toml` to `config/config.toml` and edit the documented settings.
+
+The message interval and the morning/afternoon/night weather period boundaries are configurable so each network can choose its own operating behavior.
 
 `config/config.toml` is intentionally ignored by Git because it may contain installation-specific settings and secrets.
