@@ -16,7 +16,7 @@ class ModerationNotifier:
         actor_id: str,
         target_id: str,
         duration_minutes: int | None = None,
-    ) -> tuple[Message, ...]:
+    ) -> tuple[OutgoingMessage, ...]:
         """Return the target notification followed by admin notifications."""
         target_texts = {
             "blocked": "MeshBot: Você foi bloqueado.",
