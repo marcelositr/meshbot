@@ -4,7 +4,16 @@ from pathlib import Path
 
 from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.bot import MeshBot
-from meshbot.application.commands import CommandHandler, PingCommand, RegisterCommand, TempoCommand
+from meshbot.application.commands import (
+    BlockCommand,
+    CommandHandler,
+    PingCommand,
+    RegisterCommand,
+    SilenceCommand,
+    TempoCommand,
+    UnblockCommand,
+)
+from meshbot.application.moderation import ModerationService
 from meshbot.application.users import UserService
 from meshbot.config import ConfigurationError, load_settings
 from meshbot.domain.messages import Message
@@ -33,7 +42,23 @@ def main() -> None:
 
     user_repository = SQLiteUserRepository(Path(settings.database_path))
     for node_id in settings.admins:
-        user_repository.save(User(node_id=node_id, role=UserRole.ADMIN))
+        existing = user_repository.get(node_id)
+        if existing is None:
+            user_repository.save(User(node_id=node_id, role=UserRole.ADMIN))
+        elif existing.role is not UserRole.ADMIN:
+            user_repository.save(
+                User(
+                    node_id=existing.node_id,
+                    role=UserRole.ADMIN,
+                    blocked=existing.blocked,
+                    silenced_until=existing.silenced_until,
+                )
+            )
+
+    moderation_service = ModerationService(
+        user_repository,
+        default_silence_minutes=settings.default_silence_minutes,
+    )
 
     transport = SimulatorTransport(on_send=display_message)
     weather_service = InmetWeatherService(
@@ -48,6 +73,9 @@ def main() -> None:
             RegisterCommand(
                 UserService(user_repository, settings.registration_requires_admin)
             ),
+            BlockCommand(moderation_service),
+            UnblockCommand(moderation_service),
+            SilenceCommand(moderation_service),
             TempoCommand(weather_service),
         ],
         prefix=settings.command_prefix,
