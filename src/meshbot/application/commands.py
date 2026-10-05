@@ -49,11 +49,14 @@ class RegisterCommand:
         node_id = parts[1].strip() if len(parts) >= 2 else ""
         name = parts[2].strip() if len(parts) >= 3 else ""
 
-        result = self._user_service.register(
-            message.sender_id,
-            node_id,
-            name,
-        )
+        if len(parts) < 3:
+            result = "invalid_name"
+        else:
+            result = self._user_service.register(
+                message.sender_id,
+                node_id,
+                name,
+            )
 
         responses = {
             "registered": f"Usuário {name} cadastrado.",
