@@ -9,8 +9,8 @@ from meshbot.config import ConfigurationError, load_settings
 from meshbot.domain.messages import Message
 from meshbot.domain.users import User, UserRole
 from meshbot.infrastructure.inmet_weather import InmetWeatherService
-from meshbot.infrastructure.sqlite_users import SQLiteUserRepository
 from meshbot.infrastructure.simulator import SimulatorTransport
+from meshbot.infrastructure.sqlite_users import SQLiteUserRepository
 
 
 def main() -> None:
