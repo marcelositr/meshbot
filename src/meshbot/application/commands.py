@@ -6,6 +6,7 @@ from meshbot.application.weather import (
     AmbiguousCityError,
     CityNotFoundError,
     WeatherService,
+    WeatherServiceUnavailableError,
 )
 from meshbot.domain.messages import Message
 
@@ -65,6 +66,13 @@ class TempoCommand:
                 Message(
                     node_id=message.node_id,
                     text="Use /tempo <cidade> - <UF>.",
+                ),
+            )
+        except WeatherServiceUnavailableError:
+            return (
+                Message(
+                    node_id=message.node_id,
+                    text="Serviço de previsão indisponível no momento.",
                 ),
             )
 
