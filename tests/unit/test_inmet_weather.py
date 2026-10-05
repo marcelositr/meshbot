@@ -52,24 +52,12 @@ def test_city_resolver_rejects_unknown_city() -> None:
         raise AssertionError("Expected city not found error")
 
 
-def test_parse_municipality_falls_back_to_regiao_intermediaria_uf() -> None:
+def test_parse_municipality_falls_back_to_uf_from_ibge_code() -> None:
     data = {
         "id": 3524105,
         "nome": "Ituverava",
         "microrregiao": None,
-        "regiao-imediata": {
-            "id": 350012,
-            "nome": "Ituverava",
-            "regiao-intermediaria": {
-                "id": 3503,
-                "nome": "Franca",
-                "UF": {
-                    "id": 35,
-                    "sigla": "SP",
-                    "nome": "São Paulo",
-                },
-            },
-        },
+        "regiao-imediata": None,
     }
 
     municipality = _parse_municipality(data)
