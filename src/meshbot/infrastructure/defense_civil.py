@@ -7,6 +7,11 @@ import xml.etree.ElementTree as ET
 
 import requests
 
+from meshbot.application.weather import (
+    AmbiguousCityError,
+    CityNotFoundError,
+    WeatherServiceUnavailableError,
+)
 from meshbot.application.defense_civil import (
     DefenseCivilAlert,
     DefenseCivilAmbiguousCityError,
@@ -25,7 +30,7 @@ def _normalize(value: str) -> str:
     return " ".join(value.casefold().split())
 
 
-class InmetDefenseCivilService:
+class DefenseCivilAlertService:
     """Read active Defense Civil alerts from the official CAP feed."""
 
     def __init__(
@@ -70,20 +75,12 @@ class InmetDefenseCivilService:
     def _resolve(self, location: str):
         try:
             return self._resolver.resolve(location)
-        except Exception as exc:
-            from meshbot.application.weather import (
-                AmbiguousCityError,
-                CityNotFoundError,
-                WeatherServiceUnavailableError,
-            )
-
-            if isinstance(exc, CityNotFoundError):
-                raise DefenseCivilCityNotFoundError(str(exc)) from exc
-            if isinstance(exc, AmbiguousCityError):
-                raise DefenseCivilAmbiguousCityError(exc.matches) from exc
-            if isinstance(exc, WeatherServiceUnavailableError):
-                raise DefenseCivilServiceUnavailableError(str(exc)) from exc
-            raise
+        except CityNotFoundError as exc:
+            raise DefenseCivilCityNotFoundError(str(exc)) from exc
+        except AmbiguousCityError as exc:
+            raise DefenseCivilAmbiguousCityError(exc.matches) from exc
+        except WeatherServiceUnavailableError as exc:
+            raise DefenseCivilServiceUnavailableError(str(exc)) from exc
 
     @staticmethod
     def _matches_location(area: str, city: str, uf: str) -> bool:
