@@ -42,7 +42,7 @@ def test_non_command_message_returns_no_response() -> None:
 
 
 def test_register_command_registers_sender_without_node_id_argument() -> None:
-    repository = InMemoryUsers()
+    repository = InMemoryUsers(())
     handler = CommandHandler([RegisterCommand(UserService(repository))])
 
     response = handler.handle(
