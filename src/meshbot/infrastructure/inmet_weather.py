@@ -113,14 +113,14 @@ class InmetWeatherService:
 
     def get_forecast(self, city: str) -> WeatherForecast:
         """Resolve a city or IBGE code and return the current period."""
-        code, requested_city = self._resolve_code(city)
+        code, requested_city, uf = self._resolve_code(city)
 
         try:
             data = self._fetch(code)
             daily = data[str(code)][datetime.now().strftime("%d/%m/%Y")]
             forecast = daily.get(self._current_period(), daily)
             return WeatherForecast(
-                city=str(forecast.get("entidade", requested_city)),
+                city=f"{forecast.get('entidade', requested_city)}/{uf}",
                 summary=str(forecast["resumo"]).rstrip(".") + ".",
                 temperature_min=int(forecast["temp_min"]),
                 temperature_max=int(forecast["temp_max"]),
@@ -134,13 +134,17 @@ class InmetWeatherService:
                 "INMET returned an unexpected forecast response."
             ) from exc
 
-    def _resolve_code(self, city: str) -> tuple[int, str]:
+    def _resolve_code(self, city: str) -> tuple[int, str, str]:
         match = re.fullmatch(r"ibge\s+(\d+)", city.strip(), flags=re.IGNORECASE)
         if match:
-            return int(match.group(1)), match.group(1)
+            code = int(match.group(1))
+            uf = _UF_BY_IBGE_CODE.get(code // 100_000)
+            if uf is None:
+                raise CityNotFoundError(match.group(1))
+            return code, match.group(1), uf
 
         municipality = self._resolver.resolve(city)
-        return municipality.code, municipality.name
+        return municipality.code, municipality.name, municipality.uf
 
     def _fetch(self, code: int) -> dict[str, Any]:
         try:
