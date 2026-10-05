@@ -9,8 +9,11 @@ import requests
 
 from meshbot.application.defense_civil import (
     DefenseCivilAlert,
+    DefenseCivilAmbiguousCityError,
+    DefenseCivilCityNotFoundError,
     DefenseCivilServiceUnavailableError,
 )
+from meshbot.infrastructure.inmet_weather import IBGECityResolver
 
 URL = "https://idapfile.mdr.gov.br/idap/api/rss/cap"
 TIMEOUT_SECONDS = 10
@@ -25,11 +28,17 @@ def _normalize(value: str) -> str:
 class InmetDefenseCivilService:
     """Read active Defense Civil alerts from the official CAP feed."""
 
-    def __init__(self, timeout_seconds: int = TIMEOUT_SECONDS) -> None:
+    def __init__(
+        self,
+        timeout_seconds: int = TIMEOUT_SECONDS,
+        resolver: IBGECityResolver | None = None,
+    ) -> None:
         self._timeout_seconds = timeout_seconds
+        self._resolver = resolver or IBGECityResolver(timeout_seconds)
 
     def get_alerts(self, location: str) -> tuple[DefenseCivilAlert, ...]:
-        requested_city, requested_uf = self._parse_location(location)
+        """Resolve the municipality and return matching active alerts."""
+        municipality = self._resolve(location)
 
         try:
             response = requests.get(URL, timeout=self._timeout_seconds)
@@ -49,26 +58,37 @@ class InmetDefenseCivilService:
             if alert is None:
                 continue
 
-            if self._matches_location(alert.area, requested_city, requested_uf):
+            if self._matches_location(
+                alert.area,
+                municipality.name,
+                municipality.uf,
+            ):
                 alerts.append(alert)
 
         return tuple(alerts)
 
-    @staticmethod
-    def _parse_location(location: str) -> tuple[str, str | None]:
-        parts = [part.strip() for part in location.split("/", maxsplit=1)]
-        city = _normalize(parts[0])
-        uf = _normalize(parts[1]) if len(parts) == 2 else None
-        return city, uf
+    def _resolve(self, location: str):
+        try:
+            return self._resolver.resolve(location)
+        except Exception as exc:
+            from meshbot.application.weather import (
+                AmbiguousCityError,
+                CityNotFoundError,
+                WeatherServiceUnavailableError,
+            )
+
+            if isinstance(exc, CityNotFoundError):
+                raise DefenseCivilCityNotFoundError(str(exc)) from exc
+            if isinstance(exc, AmbiguousCityError):
+                raise DefenseCivilAmbiguousCityError(exc.matches) from exc
+            if isinstance(exc, WeatherServiceUnavailableError):
+                raise DefenseCivilServiceUnavailableError(str(exc)) from exc
+            raise
 
     @staticmethod
-    def _matches_location(area: str, city: str, uf: str | None) -> bool:
+    def _matches_location(area: str, city: str, uf: str) -> bool:
         normalized_area = _normalize(area)
-        if city not in normalized_area:
-            return False
-        if uf is None:
-            return True
-        return uf in normalized_area
+        return _normalize(city) in normalized_area and _normalize(uf) in normalized_area
 
     @classmethod
     def _parse_info(cls, info: ET.Element) -> DefenseCivilAlert | None:
@@ -98,7 +118,7 @@ class InmetDefenseCivilService:
         name: str,
         *,
         required: bool = True,
-    ) -> str:
+    ) -> str | None:
         for child in parent.iter():
             if child is parent or cls._local_name(child.tag) != name:
                 continue
