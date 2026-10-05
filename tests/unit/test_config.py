@@ -40,6 +40,7 @@ def test_load_settings_returns_validated_settings(tmp_path: Path) -> None:
     assert settings.name == "MeshBot"
     assert settings.transport == "simulator"
     assert settings.admins == ("!12345678",)
+    assert settings.database_path == "data/meshbot.db"
     assert settings.default_silence_minutes == 30
     assert settings.message_delay_seconds == 5
     assert settings.weather_provider == "inmet"
