@@ -189,8 +189,13 @@ class UnblockCommand:
 
     name = "desbloquear"
 
-    def __init__(self, moderation_service: ModerationService) -> None:
+    def __init__(
+        self,
+        moderation_service: ModerationService,
+        notifier: ModerationNotifier,
+    ) -> None:
         self._moderation_service = moderation_service
+        self._notifier = notifier
 
     def execute(self, message: Message) -> tuple[Message, ...]:
         """Unblock the requested user."""
@@ -224,8 +229,13 @@ class SilenceCommand:
 
     name = "silenciar"
 
-    def __init__(self, moderation_service: ModerationService) -> None:
+    def __init__(
+        self,
+        moderation_service: ModerationService,
+        notifier: ModerationNotifier,
+    ) -> None:
         self._moderation_service = moderation_service
+        self._notifier = notifier
 
     def execute(self, message: Message) -> tuple[Message, ...]:
         """Silence the requested user."""
