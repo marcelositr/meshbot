@@ -14,6 +14,7 @@ from meshbot.application.commands import (
     UnblockCommand,
 )
 from meshbot.application.moderation import ModerationService
+from meshbot.application.moderation_notifications import ModerationNotifier
 from meshbot.application.users import UserService
 from meshbot.config import ConfigurationError, load_settings
 from meshbot.domain.messages import Message
@@ -59,6 +60,7 @@ def main() -> None:
         user_repository,
         default_silence_minutes=settings.default_silence_minutes,
     )
+    moderation_notifier = ModerationNotifier(user_repository)
 
     transport = SimulatorTransport(on_send=display_message)
     weather_service = InmetWeatherService(
@@ -73,9 +75,9 @@ def main() -> None:
             RegisterCommand(
                 UserService(user_repository, settings.registration_requires_admin)
             ),
-            BlockCommand(moderation_service),
-            UnblockCommand(moderation_service),
-            SilenceCommand(moderation_service),
+            BlockCommand(moderation_service, moderation_notifier),
+            UnblockCommand(moderation_service, moderation_notifier),
+            SilenceCommand(moderation_service, moderation_notifier),
             TempoCommand(weather_service),
         ],
         prefix=settings.command_prefix,
