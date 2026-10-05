@@ -59,6 +59,7 @@ class ModerationService:
         self._repository.save(
             User(
                 node_id=target.node_id,
+                name=target.name,
                 role=target.role,
                 blocked=False,
                 silenced_until=target.silenced_until,
@@ -87,6 +88,7 @@ class ModerationService:
         self._repository.save(
             User(
                 node_id=target.node_id,
+                name=target.name,
                 role=target.role,
                 blocked=target.blocked,
                 silenced_until=current_time + timedelta(minutes=duration),
