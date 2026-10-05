@@ -20,27 +20,12 @@ class InMemoryUsers:
         return tuple(self._users.values())
 
 
-def test_admin_can_register_user() -> None:
-    repository = InMemoryUsers((User("!11111111", role=UserRole.ADMIN),))
+def test_user_can_register_themselves() -> None:
+    repository = InMemoryUsers()
     service = UserService(repository)
 
-    assert service.register("!11111111", "!22222222") == "registered"
+    assert service.register("!22222222") == "registered"
     assert repository.get("!22222222") == User("!22222222")
-
-
-def test_normal_user_cannot_register_when_admin_required() -> None:
-    repository = InMemoryUsers((User("!11111111"),))
-    service = UserService(repository)
-
-    assert service.register("!11111111", "!22222222") == "admin_required"
-    assert repository.get("!22222222") is None
-
-
-def test_registration_can_be_open_when_configured() -> None:
-    repository = InMemoryUsers((User("!11111111"),))
-    service = UserService(repository, registration_requires_admin=False)
-
-    assert service.register("!11111111", "!22222222") == "registered"
 
 
 def test_duplicate_registration_is_rejected() -> None:
@@ -52,13 +37,13 @@ def test_duplicate_registration_is_rejected() -> None:
     )
     service = UserService(repository)
 
-    assert service.register("!11111111", "!22222222") == "already_registered"
+    assert service.register("!22222222") == "already_registered"
 
 
-def test_unknown_requester_cannot_register() -> None:
+def test_invalid_node_id_is_rejected() -> None:
     service = UserService(InMemoryUsers())
 
-    assert service.register("!99999999", "!22222222") == "requester_not_registered"
+    assert service.register("not-a-node") == "invalid_node_id"
 
 
 def test_registered_user_can_set_name() -> None:
