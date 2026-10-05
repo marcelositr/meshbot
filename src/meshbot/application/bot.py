@@ -3,6 +3,7 @@
 import time
 from collections.abc import Callable
 
+from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.commands import CommandHandler
 from meshbot.application.ports import MessageTransport
 
@@ -14,11 +15,13 @@ class MeshBot:
         self,
         transport: MessageTransport,
         command_handler: CommandHandler,
+        authorization: AuthorizationPolicy | None = None,
         message_delay_seconds: float = 0,
         sleep: Callable[[float], None] = time.sleep,
     ) -> None:
         self._transport = transport
         self._commands = command_handler
+        self._authorization = authorization
         self._message_delay_seconds = message_delay_seconds
         self._sleep = sleep
 
@@ -27,6 +30,11 @@ class MeshBot:
         message = self._transport.receive()
         if message is None:
             return False
+
+        if self._authorization is not None:
+            authorization = self._authorization.check(message.node_id)
+            if not authorization.allowed:
+                return True
 
         responses = self._commands.handle(message)
 
