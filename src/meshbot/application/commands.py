@@ -12,6 +12,7 @@ from meshbot.application.weather import (
     WeatherServiceUnavailableError,
 )
 from meshbot.domain.messages import IncomingMessage, OutgoingMessage
+from meshbot.domain.users import normalize_user_name
 
 
 class Command(Protocol):
@@ -83,7 +84,16 @@ class NameCommand:
                 ),
             )
 
-        normalized_name = " ".join(name.split())
+        try:
+            normalized_name = normalize_user_name(name)
+        except ValueError:
+            return (
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
+                    text="Nome inválido.",
+                ),
+            )
+
         result = self._user_service.set_name(message.sender_id, normalized_name)
         responses = {
             "name_updated": f"Seu nome agora é {normalized_name}.",
