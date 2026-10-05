@@ -39,9 +39,15 @@ The simulator accepts messages such as:
 !12345678 !ping
 !12345678 !tempo Ituverava
 !12345678 !tempo Ituverava/SP
+!12345678 !registrar !22222222
+!12345678 !bloquear !22222222
+!12345678 !desbloquear !22222222
+!12345678 !silenciar !22222222 30
 ```
 
 The `!tempo` command resolves municipalities through IBGE, accepts `Cidade/UF` for ambiguous names, and supports `!tempo ibge <codigo>` as a fallback.
+
+The `!registrar`, `!bloquear`, `!desbloquear`, and `!silenciar` commands are restricted to administrators. Administrators cannot moderate other administrators. `!silenciar` accepts an optional duration in minutes and otherwise uses `default_silence_minutes`.
 
 Run tests:
 
