@@ -73,6 +73,9 @@ class IBGECityResolver:
         except (HTTPError, URLError, TimeoutError) as exc:
             raise RuntimeError("Unable to retrieve the IBGE municipality list.") from exc
 
+        if not isinstance(data, list):
+            raise RuntimeError("IBGE returned an unexpected municipality response.")
+
         self._municipalities = tuple(_parse_municipality(item) for item in data)
         return self._municipalities
 
@@ -97,16 +100,14 @@ class InmetWeatherService:
         self._resolver = resolver or IBGECityResolver(timeout_seconds)
 
     def get_forecast(self, city: str) -> WeatherForecast:
-        """Resolve a city and return the forecast for the current period."""
-        municipality = self._resolver.resolve(city)
-        data = self._fetch(municipality.code)
-        today = datetime.now().strftime("%d/%m/%Y")
-        daily = data[str(municipality.code)][today]
-        period = self._current_period()
-        forecast = daily.get(period, daily)
+        """Resolve a city or IBGE code and return the current period."""
+        code, requested_city = self._resolve_code(city)
+        data = self._fetch(code)
+        daily = data[str(code)][datetime.now().strftime("%d/%m/%Y")]
+        forecast = daily.get(self._current_period(), daily)
 
         return WeatherForecast(
-            city=f"{forecast['entidade']} - {forecast['uf']}",
+            city=str(forecast.get("entidade", requested_city)),
             summary=str(forecast["resumo"]).rstrip(".") + ".",
             temperature_min=int(forecast["temp_min"]),
             temperature_max=int(forecast["temp_max"]),
@@ -115,6 +116,14 @@ class InmetWeatherService:
             wind_direction=str(forecast["dir_vento"]),
             wind_intensity=str(forecast["int_vento"]).lower(),
         )
+
+    def _resolve_code(self, city: str) -> tuple[int, str]:
+        match = re.fullmatch(r"ibge\s+(\d+)", city.strip(), flags=re.IGNORECASE)
+        if match:
+            return int(match.group(1)), match.group(1)
+
+        municipality = self._resolver.resolve(city)
+        return municipality.code, municipality.name
 
     def _fetch(self, code: int) -> dict[str, Any]:
         request = Request(
