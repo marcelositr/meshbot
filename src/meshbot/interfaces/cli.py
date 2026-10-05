@@ -17,7 +17,7 @@ from meshbot.application.moderation import ModerationService
 from meshbot.application.moderation_notifications import ModerationNotifier
 from meshbot.application.users import UserService
 from meshbot.config import ConfigurationError, load_settings
-from meshbot.domain.messages import Message
+from meshbot.domain.messages import OutgoingMessage
 from meshbot.domain.users import User, UserRole
 from meshbot.infrastructure.inmet_weather import InmetWeatherService
 from meshbot.infrastructure.simulator import SimulatorTransport
@@ -38,8 +38,8 @@ def main() -> None:
             'The local chat requires transport = "simulator" in config/config.toml.'
         )
 
-    def display_message(message: Message) -> None:
-        print(f"{message.node_id} <- {message.text}")
+    def display_message(message: OutgoingMessage) -> None:
+        print(f"{message.recipient_id} <- {message.text}")
 
     user_repository = SQLiteUserRepository(Path(settings.database_path))
     for node_id in settings.admins:
