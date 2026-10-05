@@ -2,6 +2,7 @@
 
 from typing import Protocol
 
+from meshbot.application.users import UserService
 from meshbot.application.weather import (
     AmbiguousCityError,
     CityNotFoundError,
@@ -29,6 +30,30 @@ class PingCommand:
     def execute(self, message: Message) -> tuple[Message, ...]:
         """Return the pong response."""
         return (Message(node_id=message.node_id, text="pong"),)
+
+
+class RegisterCommand:
+    """Register a node as a normal user."""
+
+    name = "registrar"
+
+    def __init__(self, user_service: UserService) -> None:
+        self._user_service = user_service
+
+    def execute(self, message: Message) -> tuple[Message, ...]:
+        """Register the requested node."""
+        parts = message.text.strip().split(maxsplit=1)
+        node_id = parts[1].strip() if len(parts) == 2 else ""
+
+        result = self._user_service.register(message.node_id, node_id)
+        responses = {
+            "registered": f"Usuário {node_id} cadastrado.",
+            "already_registered": f"Usuário {node_id} já está cadastrado.",
+            "admin_required": "Apenas administradores podem cadastrar usuários.",
+            "requester_not_registered": "Usuário não cadastrado.",
+            "invalid_node_id": "Use: !registrar <node_id>",
+        }
+        return (Message(node_id=message.node_id, text=responses[result]),)
 
 
 class TempoCommand:
