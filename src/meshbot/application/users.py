@@ -2,7 +2,7 @@
 
 from typing import Protocol
 
-from meshbot.domain.users import User, UserRole, normalize_user_name
+from meshbot.domain.users import User, normalize_node_id, normalize_user_name
 
 
 class UserRepository(Protocol):
@@ -24,33 +24,7 @@ class UserRepository(Protocol):
 class UserService:
     """Apply application rules for registering users."""
 
-    def __init__(
-        self,
-        repository: UserRepository,
-        registration_requires_admin: bool = True,
-    ) -> None:
-        self._repository = repository
-        self._registration_requires_admin = registration_requires_admin
-
-    def register(self, requester_id: str, node_id: str) -> str:
-        """Register a node and return the result code."""
-        if not node_id.strip():
-            return "invalid_node_id"
-
-        requester = self._repository.get(requester_id)
-        if requester is None:
-            return "requester_not_registered"
-
-        if self._registration_requires_admin and requester.role is not UserRole.ADMIN:
-            return "admin_required"
-
-        if self._repository.get(node_id) is not None:
-            return "already_registered"
-
-        self._repository.save(User(node_id=node_id))
-        return "registered"
-
-    def set_name(self, requester_id: str, name: str) -> str:
+    def __init__(self, repository: UserRepository) -> None:\n        self._repository = repository\n\n    def register(self, requester_id: str) -> str:\n        """Register the requesting node itself."""\n        try:\n            node_id = normalize_node_id(requester_id)\n        except ValueError:\n            return "invalid_node_id"\n\n        if self._repository.get(node_id) is not None:\n            return "already_registered"\n\n        self._repository.save(User(node_id=node_id))\n        return "registered"\n\n    def set_name(self, requester_id: str, name: str) -> str:
         """Set or replace the requester's display name."""
         requester = self._repository.get(requester_id)
         if requester is None:
