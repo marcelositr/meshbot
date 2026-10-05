@@ -70,15 +70,15 @@ def main() -> None:
         afternoon_start=settings.weather_afternoon_start,
         night_start=settings.weather_night_start,
     )
+    user_service = UserService(
+        user_repository,
+        settings.registration_requires_admin,
+    )
     command_handler = CommandHandler(
         [
             PingCommand(),
-            RegisterCommand(
-                UserService(user_repository, settings.registration_requires_admin)
-            ),
-            NameCommand(
-                UserService(user_repository, settings.registration_requires_admin)
-            ),
+            RegisterCommand(user_service),
+            NameCommand(user_service),
             BlockCommand(moderation_service, moderation_notifier),
             UnblockCommand(moderation_service, moderation_notifier),
             SilenceCommand(moderation_service, moderation_notifier),
