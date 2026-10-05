@@ -50,3 +50,4 @@ def test_city_resolver_rejects_unknown_city() -> None:
         pass
     else:
         raise AssertionError("Expected city not found error")
+\n\ndef test_json_response_decompresses_gzip() -> None:\n    import gzip\n    import io\n    import json\n\n    from meshbot.infrastructure import inmet_weather\n\n    payload = json.dumps({"3524105": {}}).encode()\n    compressed = gzip.compress(payload)\n\n    class FakeHeaders:\n        def get(self, name: str, default: str = "") -> str:\n            return "gzip" if name == "Content-Encoding" else default\n\n    class FakeResponse(io.BytesIO):\n        headers = FakeHeaders()\n\n    response = FakeResponse(compressed)\n\n    assert inmet_weather._load_json_response(response) == {"3524105": {}}\n
