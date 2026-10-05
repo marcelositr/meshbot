@@ -24,6 +24,18 @@ class DefenseCivilServiceUnavailableError(DefenseCivilServiceError):
     """Raised when the external alert feed cannot be reached or parsed."""
 
 
+class DefenseCivilCityNotFoundError(DefenseCivilServiceError):
+    """Raised when the requested municipality does not exist."""
+
+
+class DefenseCivilAmbiguousCityError(DefenseCivilServiceError):
+    """Raised when a city name matches multiple municipalities."""
+
+    def __init__(self, matches: tuple[str, ...]) -> None:
+        self.matches = matches
+        super().__init__("City name is ambiguous.")
+
+
 class DefenseCivilService(Protocol):
     """Interface used by the Defense Civil command."""
 
