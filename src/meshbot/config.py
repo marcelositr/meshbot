@@ -23,7 +23,6 @@ class Settings:
     channel_index: int
     admins: tuple[str, ...]
     database_path: str
-    registration_requires_admin: bool
     default_silence_minutes: int
     command_prefix: str
     message_delay_seconds: float
@@ -67,7 +66,6 @@ def _build_settings(raw: dict[str, Any]) -> Settings:
             channel_index=_required_int(raw, "channel_index"),
             admins=_required_admins(raw),
             database_path=_optional_string(raw, "database_path", "data/meshbot.db"),
-            registration_requires_admin=_required_bool(raw, "registration_requires_admin"),
             default_silence_minutes=_required_int(raw, "default_silence_minutes"),
             command_prefix=_required_string(raw, "command_prefix"),
             message_delay_seconds=_required_number(messaging, "message_delay_seconds"),
@@ -166,13 +164,6 @@ def _optional_string(raw: dict[str, Any], key: str, default: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ConfigurationError(f"{key} must be a non-empty string.")
     return value.strip()
-
-
-def _required_bool(raw: dict[str, Any], key: str) -> bool:
-    value = raw[key]
-    if not isinstance(value, bool):
-        raise ConfigurationError(f"{key} must be true or false.")
-    return value
 
 
 def _required_admins(raw: dict[str, Any]) -> tuple[str, ...]:
