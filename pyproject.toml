@@ -10,7 +10,9 @@ readme = "README.md"
 requires-python = ">=3.13"
 license = { file = "LICENSE" }
 authors = [{ name = "Marcelo Trindade" }]
-dependencies = []
+dependencies = [
+    "requests>=2.32",
+]
 
 [project.optional-dependencies]
 dev = ["mypy>=1.17", "pytest>=8.4", "ruff>=0.13"]
