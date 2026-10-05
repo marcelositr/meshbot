@@ -62,6 +62,16 @@ def test_unregistered_user_cannot_set_name() -> None:
     assert service.set_name("!99999999", "Ana Clara") == "requester_not_registered"
 
 
+def test_user_name_is_normalized_to_nfc() -> None:
+    repository = InMemoryUsers((User("!11111111"),))
+    service = UserService(repository)
+
+    decomposed = "Jose\\u0301"
+
+    assert service.set_name("!11111111", decomposed) == "name_updated"
+    assert repository.get("!11111111") == User("!11111111", name="José")
+
+
 def test_user_name_limit_is_24_characters() -> None:
     repository = InMemoryUsers((User("!11111111"),))
     service = UserService(repository)
