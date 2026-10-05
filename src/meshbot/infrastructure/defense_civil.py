@@ -122,8 +122,8 @@ class DefenseCivilAlertService:
             event=event,
             severity=severity,
             area=area,
-            headline=headline,
-            description=description,
+            headline=headline or "",
+            description=description or "",
             expires=expires,
         )
 
