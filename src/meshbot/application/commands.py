@@ -45,15 +45,19 @@ class RegisterCommand:
     def execute(self, message: IncomingMessage) -> tuple[OutgoingMessage, ...]:
         """Register the requested node."""
         parts = message.text.strip().split(maxsplit=1)
-        node_id = parts[1].strip() if len(parts) == 2 else ""
+        if len(parts) != 1:
+            return (
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
+                    text="Use: !registrar.",
+                ),
+            )
 
-        result = self._user_service.register(message.sender_id, node_id)
+        result = self._user_service.register(message.sender_id)
         responses = {
-            "registered": "Usuário cadastrado.",
-            "already_registered": "Este usuário já está cadastrado.",
-            "admin_required": "Apenas administradores podem fazer isso.",
-            "requester_not_registered": "Você não está cadastrado.",
-            "invalid_node_id": "Use: !registrar <node_id>.",
+            "registered": "Cadastro realizado.",
+            "already_registered": "Você já está cadastrado.",
+            "invalid_node_id": "Não foi possível identificar seu node.",
         }
         return (OutgoingMessage(recipient_id=message.sender_id, text=responses[result]),)
 
