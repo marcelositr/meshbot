@@ -8,16 +8,16 @@ from datetime import UTC, datetime
 
 import requests
 
-from meshbot.application.weather import (
-    AmbiguousCityError,
-    CityNotFoundError,
-    WeatherServiceUnavailableError,
-)
 from meshbot.application.defense_civil import (
     DefenseCivilAlert,
     DefenseCivilAmbiguousCityError,
     DefenseCivilCityNotFoundError,
     DefenseCivilServiceUnavailableError,
+)
+from meshbot.application.weather import (
+    AmbiguousCityError,
+    CityNotFoundError,
+    WeatherServiceUnavailableError,
 )
 from meshbot.infrastructure.inmet_weather import IBGECityResolver, Municipality
 
