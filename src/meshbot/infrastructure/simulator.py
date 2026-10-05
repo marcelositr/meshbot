@@ -13,11 +13,11 @@ class SimulatorTransport:
         self,
         on_send: Callable[[OutgoingMessage], None] | None = None,
     ) -> None:
-        self._incoming: deque[OutgoingMessage] = deque()
+        self._incoming: deque[IncomingMessage] = deque()
         self.sent_messages: list[OutgoingMessage] = []
         self._on_send = on_send
 
-    def receive(self) -> Message | None:
+    def receive(self) -> IncomingMessage | None:
         """Return the oldest queued incoming message."""
         if not self._incoming:
             return None
