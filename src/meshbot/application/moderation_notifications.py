@@ -28,13 +28,14 @@ class ModerationNotifier:
         """Return the target notification followed by admin notifications."""
         target_name = self._display_name(target_id)
         actor_name = self._display_name(actor_id)
+        duration_label = "minuto" if duration_minutes == 1 else "minutos"
 
         target_texts = {
             "blocked": f"{target_name}, você foi bloqueado.",
             "unblocked": f"{target_name}, você foi desbloqueado.",
             "silenced": (
                 f"{target_name}, você foi silenciado "
-                f"por {duration_minutes} minuto{"" if duration_minutes == 1 else "s"}."
+                f"por {duration_minutes} {duration_label}."
             ),
         }
         admin_texts = {
@@ -42,7 +43,7 @@ class ModerationNotifier:
             "unblocked": f"O administrador {actor_name} desbloqueou {target_name}.",
             "silenced": (
                 f"O administrador {actor_name} silenciou "
-                f"{target_name} por {duration_minutes} minutos."
+                f"{target_name} por {duration_minutes} {duration_label}."
             ),
         }
 
