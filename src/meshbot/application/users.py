@@ -24,7 +24,11 @@ class UserRepository(Protocol):
 class UserService:
     """Apply application rules for registering users."""
 
-    def __init__(self, repository: UserRepository, registration_requires_admin: bool = True) -> None:
+    def __init__(
+        self,
+        repository: UserRepository,
+        registration_requires_admin: bool = True,
+    ) -> None:
         self._repository = repository
         self._registration_requires_admin = registration_requires_admin
 
