@@ -63,7 +63,7 @@ def test_name_command_rejects_invalid_name() -> None:
     assert response[0].text.startswith("Nome inválido.")
 
 
-def test_tempo_command_formats_four_compact_messages() -> None:
+def test_tempo_command_formats_four_natural_messages() -> None:
     service = FakeWeatherService(
         WeatherForecast(
             city="Ituverava/SP",
@@ -81,10 +81,10 @@ def test_tempo_command_formats_four_compact_messages() -> None:
     response = handler.handle(IncomingMessage(sender_id="!12345678", text="!tempo Ituverava"))
 
     assert [message.text for message in response] == [
-        "Ituverava/SP: Nublado c/ pancadas de chuva e",
-        "Temp: 19-31°C",
-        "Umid: 50-90%",
-        "Vento: NE-N fracos",
+        "Ituverava/SP: Nublado c/ pancadas de chuva e trovoadas isoladas.",
+        "Temperatura: 19°C a 31°C",
+        "Umidade: 50% a 90%",
+        "Vento: NE-N, fracos",
     ]
 
 
