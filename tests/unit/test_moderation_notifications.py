@@ -74,4 +74,5 @@ def test_moderation_preserves_target_name() -> None:
         )
     )
     notifier = ModerationNotifier(repository)
-    assert notifier.notify("blocked", "!11111111", "!22222222")[0].text == "!22222222, você foi bloqueado."
+    message = notifier.notify("blocked", "!11111111", "!22222222")[0]
+    assert message.text == "Ana Clara, você foi bloqueado."
