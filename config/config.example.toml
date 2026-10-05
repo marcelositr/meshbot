@@ -61,6 +61,12 @@ default_silence_minutes = 30
 command_prefix = "!"
 
 # ------------------------------------------------------------
+# LOG
+# ------------------------------------------------------------
+# DEBUG, INFO, WARNING ou ERROR
+log_level = "INFO"
+
+# ------------------------------------------------------------
 # ENVIO DE MENSAGENS
 # ------------------------------------------------------------
 # Intervalo entre mensagens consecutivas da mesma resposta.
@@ -85,9 +91,3 @@ timeout_seconds = 30
 morning_start = "06:00"
 afternoon_start = "12:00"
 night_start = "18:00"
-
-# ------------------------------------------------------------
-# LOG
-# ------------------------------------------------------------
-# DEBUG, INFO, WARNING ou ERROR
-log_level = "INFO"
