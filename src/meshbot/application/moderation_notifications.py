@@ -1,7 +1,7 @@
 """Direct notifications for moderation actions."""
 
 from meshbot.application.users import UserRepository
-from meshbot.domain.messages import Message
+from meshbot.domain.messages import OutgoingMessage
 
 
 class ModerationNotifier:
@@ -36,10 +36,10 @@ class ModerationNotifier:
 
         target_text = target_texts[action]
         admin_text = admin_texts[action]
-        messages = [Message(node_id=target_id, text=target_text)]
+        messages = [OutgoingMessage(recipient_id=target_id, text=target_text)]
 
         for user in self._repository.list_all():
             if user.role.value == "admin":
-                messages.append(Message(node_id=user.node_id, text=admin_text))
+                messages.append(OutgoingMessage(recipient_id=user.node_id, text=admin_text))
 
         return tuple(messages)
