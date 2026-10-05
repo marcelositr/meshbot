@@ -9,7 +9,7 @@ from meshbot.application.commands import (
 from meshbot.application.moderation import ModerationService
 from meshbot.application.moderation_notifications import ModerationNotifier
 from meshbot.application.weather import WeatherForecast
-from meshbot.domain.messages import Message
+from meshbot.domain.messages import IncomingMessage, OutgoingMessage
 from meshbot.domain.users import User, UserRole
 from meshbot.infrastructure.weather import FakeWeatherService
 
@@ -17,15 +17,15 @@ from meshbot.infrastructure.weather import FakeWeatherService
 def test_ping_command_returns_pong() -> None:
     handler = CommandHandler([PingCommand()])
 
-    response = handler.handle(Message(node_id="!12345678", text="!ping"))
+    response = handler.handle(IncomingMessage(sender_id="!12345678", text="!ping"))
 
-    assert response == (Message(node_id="!12345678", text="pong"),)
+    assert response == (OutgoingMessage(recipient_id="!12345678", text="pong"),)
 
 
 def test_unknown_command_returns_no_response() -> None:
     handler = CommandHandler([PingCommand()])
 
-    response = handler.handle(Message(node_id="!12345678", text="!unknown"))
+    response = handler.handle(IncomingMessage(sender_id="!12345678", text="!unknown"))
 
     assert response == ()
 
@@ -33,7 +33,7 @@ def test_unknown_command_returns_no_response() -> None:
 def test_non_command_message_returns_no_response() -> None:
     handler = CommandHandler([PingCommand()])
 
-    response = handler.handle(Message(node_id="!12345678", text="hello"))
+    response = handler.handle(IncomingMessage(sender_id="!12345678", text="hello"))
 
     assert response == ()
 
@@ -53,7 +53,7 @@ def test_tempo_command_formats_four_compact_messages() -> None:
     )
     handler = CommandHandler([TempoCommand(service)])
 
-    response = handler.handle(Message(node_id="!12345678", text="!tempo Ituverava"))
+    response = handler.handle(IncomingMessage(sender_id="!12345678", text="!tempo Ituverava"))
 
     assert [message.text for message in response] == [
         "Ituverava/SP: Nublado c/ pancadas de chuva e trovoadas isoladas.",
@@ -66,7 +66,7 @@ def test_tempo_command_formats_four_compact_messages() -> None:
 def test_tempo_command_requires_city() -> None:
     handler = CommandHandler([TempoCommand(FakeWeatherService())])
 
-    response = handler.handle(Message(node_id="!12345678", text="!tempo"))
+    response = handler.handle(IncomingMessage(sender_id="!12345678", text="!tempo"))
 
     assert response[0].text == "Use: !tempo <cidade>"
 
@@ -86,7 +86,7 @@ def test_tempo_command_accepts_city_and_uf() -> None:
     )
     handler = CommandHandler([TempoCommand(service)])
 
-    response = handler.handle(Message(node_id="!12345678", text="!tempo Ituverava/SP"))
+    response = handler.handle(IncomingMessage(sender_id="!12345678", text="!tempo Ituverava/SP"))
 
     assert response[0].text == "Ituverava/SP: Tempo estável."
 
@@ -121,9 +121,9 @@ def test_block_command_blocks_user() -> None:
         [BlockCommand(ModerationService(repository), ModerationNotifier(repository))]
     )
 
-    response = handler.handle(Message(node_id="!11111111", text="!bloquear !22222222"))
+    response = handler.handle(IncomingMessage(sender_id="!11111111", text="!bloquear !22222222"))
 
-    assert [message.node_id for message in response] == ["!22222222", "!11111111"]
+    assert [message.recipient_id for message in response] == ["!22222222", "!11111111"]
     assert response[0].text == "MeshBot: Você foi bloqueado."
     assert response[1].text == "MeshBot: Admin !11111111 bloqueou !22222222."
     assert repository.get("!22222222") == User("!22222222", blocked=True)
@@ -140,9 +140,9 @@ def test_unblock_command_unblocks_user() -> None:
         [UnblockCommand(ModerationService(repository), ModerationNotifier(repository))]
     )
 
-    response = handler.handle(Message(node_id="!11111111", text="!desbloquear !22222222"))
+    response = handler.handle(IncomingMessage(sender_id="!11111111", text="!desbloquear !22222222"))
 
-    assert [message.node_id for message in response] == ["!22222222", "!11111111"]
+    assert [message.recipient_id for message in response] == ["!22222222", "!11111111"]
     assert response[0].text == "MeshBot: Seu acesso ao MeshBot foi desbloqueado."
     assert response[1].text == "MeshBot: Admin !11111111 desbloqueou !22222222."
     assert repository.get("!22222222") == User("!22222222")
@@ -159,8 +159,8 @@ def test_silence_command_accepts_custom_duration() -> None:
         [SilenceCommand(ModerationService(repository), ModerationNotifier(repository))]
     )
 
-    response = handler.handle(Message(node_id="!11111111", text="!silenciar !22222222 15"))
+    response = handler.handle(IncomingMessage(sender_id="!11111111", text="!silenciar !22222222 15"))
 
-    assert [message.node_id for message in response] == ["!22222222", "!11111111"]
+    assert [message.recipient_id for message in response] == ["!22222222", "!11111111"]
     assert response[0].text == "MeshBot: Você foi silenciado por 15 minutos."
     assert response[1].text == "MeshBot: Admin !11111111 silenciou !22222222 por 15 minutos."
