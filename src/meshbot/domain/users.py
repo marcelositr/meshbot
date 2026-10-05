@@ -3,7 +3,10 @@
 import unicodedata
 from dataclasses import dataclass
 from datetime import datetime
-from enum import StrEnumMAX_USER_NAME_LENGTH = 60
+from enum import StrEnum
+
+
+MAX_USER_NAME_LENGTH = 60
 DEFAULT_USER_NAME = "Sem nome"
 
 
