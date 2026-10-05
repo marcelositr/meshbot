@@ -205,16 +205,20 @@ def _extract_uf(data: dict[str, Any]) -> str:
         mesorregiao = microrregiao.get("mesorregiao")
         if isinstance(mesorregiao, dict):
             uf = mesorregiao.get("UF")
-            if isinstance(uf, dict) and isinstance(uf.get("sigla"), str):
-                return uf["sigla"]
+            if isinstance(uf, dict):
+                sigla = uf.get("sigla")
+                if isinstance(sigla, str):
+                    return sigla
 
     regiao_imediata = data.get("regiao-imediata")
     if isinstance(regiao_imediata, dict):
         regiao_intermediaria = regiao_imediata.get("regiao-intermediaria")
         if isinstance(regiao_intermediaria, dict):
             uf = regiao_intermediaria.get("UF")
-            if isinstance(uf, dict) and isinstance(uf.get("sigla"), str):
-                return uf["sigla"]
+            if isinstance(uf, dict):
+                sigla = uf.get("sigla")
+                if isinstance(sigla, str):
+                    return sigla
 
     code = int(data["id"])
     uf_code = code // 100_000
