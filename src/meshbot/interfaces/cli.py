@@ -7,6 +7,7 @@ from meshbot.application.bot import MeshBot
 from meshbot.application.commands import (
     BlockCommand,
     CommandHandler,
+    NameCommand,
     PingCommand,
     RegisterCommand,
     SilenceCommand,
@@ -73,6 +74,9 @@ def main() -> None:
         [
             PingCommand(),
             RegisterCommand(
+                UserService(user_repository, settings.registration_requires_admin)
+            ),
+            NameCommand(
                 UserService(user_repository, settings.registration_requires_admin)
             ),
             BlockCommand(moderation_service, moderation_notifier),
