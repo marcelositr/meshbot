@@ -28,6 +28,12 @@ def test_user_can_register_themselves() -> None:
     assert repository.get("!22222222") == User("!22222222")
 
 
+def test_invalid_node_id_is_rejected() -> None:
+    service = UserService(InMemoryUsers())
+
+    assert service.register("not-a-node") == "invalid_node_id"
+
+
 def test_duplicate_registration_is_rejected() -> None:
     repository = InMemoryUsers(
         (
