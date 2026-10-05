@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gzip
 import json
 import re
 import unicodedata
@@ -70,7 +71,7 @@ class IBGECityResolver:
 
         try:
             with urlopen(request, timeout=self._timeout_seconds) as response:
-                data = json.load(response)
+                data = _load_json_response(response)
         except (HTTPError, URLError, TimeoutError) as exc:
             raise WeatherServiceUnavailableError(
                 "Unable to retrieve the IBGE municipality list."
@@ -143,7 +144,7 @@ class InmetWeatherService:
 
         try:
             with urlopen(request, timeout=self._timeout_seconds) as response:
-                data = json.load(response)
+                data = _load_json_response(response)
         except (HTTPError, URLError, TimeoutError) as exc:
             raise WeatherServiceUnavailableError(
                 "Unable to retrieve the INMET forecast."
