@@ -38,6 +38,7 @@ class ModerationService:
         self._repository.save(
             User(
                 node_id=target.node_id,
+                name=target.name,
                 role=target.role,
                 blocked=True,
                 silenced_until=target.silenced_until,
