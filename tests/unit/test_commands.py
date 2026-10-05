@@ -81,7 +81,7 @@ def test_tempo_command_formats_four_compact_messages() -> None:
     response = handler.handle(IncomingMessage(sender_id="!12345678", text="!tempo Ituverava"))
 
     assert [message.text for message in response] == [
-        "Ituverava/SP: Nublado c/ pancadas de chuva e trovoadas iso",
+        "Ituverava/SP: Nublado c/ pancadas de chuva e",
         "Temp: 19-31°C",
         "Umid: 50-90%",
         "Vento: NE-N fracos",
@@ -191,3 +191,14 @@ def test_silence_command_accepts_custom_duration() -> None:
     assert [message.recipient_id for message in response] == ["!22222222", "!11111111"]
     assert response[0].text == "Silenciado: 15min."
     assert response[1].text == "Silêncio: !11111111>!22222222 15min"
+
+
+def test_name_command_normalizes_response_spaces() -> None:
+    repository = InMemoryUsers((User("!12345678"),))
+    handler = CommandHandler([NameCommand(UserService(repository))])
+
+    response = handler.handle(
+        IncomingMessage(sender_id="!12345678", text="!nome Vanessa   da   Mata")
+    )
+
+    assert response[0].text == "Nome: Vanessa da Mata."
