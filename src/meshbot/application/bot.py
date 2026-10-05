@@ -32,7 +32,7 @@ class MeshBot:
             return False
 
         if self._authorization is not None:
-            authorization = self._authorization.check(message.node_id)
+            authorization = self._authorization.check(message.sender_id)
             if not authorization.allowed:
                 return True
 
