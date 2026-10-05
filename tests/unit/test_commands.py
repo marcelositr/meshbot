@@ -1,4 +1,13 @@
-from meshbot.application.commands import CommandHandler, PingCommand, TempoCommand
+from meshbot.application.commands import (
+    BlockCommand,
+    CommandHandler,
+    PingCommand,
+    SilenceCommand,
+    TempoCommand,
+    UnblockCommand,
+)
+from meshbot.application.moderation import ModerationService
+from meshbot.domain.users import User, UserRole
 from meshbot.application.weather import WeatherForecast
 from meshbot.domain.messages import Message
 from meshbot.infrastructure.weather import FakeWeatherService
@@ -79,3 +88,66 @@ def test_tempo_command_accepts_city_and_uf() -> None:
     response = handler.handle(Message(node_id="!12345678", text="!tempo Ituverava/SP"))
 
     assert response[0].text == "Ituverava/SP: Tempo estável."
+
+
+class InMemoryUsers:
+    """Small repository fake for command tests."""
+
+    def __init__(self, users: tuple[User, ...]) -> None:
+        self._users = {user.node_id: user for user in users}
+
+    def get(self, node_id: str) -> User | None:
+        """Return a registered user."""
+        return self._users.get(node_id)
+
+    def save(self, user: User) -> None:
+        """Store a user."""
+        self._users[user.node_id] = user
+
+    def list_all(self) -> tuple[User, ...]:
+        """Return all users."""
+        return tuple(self._users.values())
+
+
+def test_block_command_blocks_user() -> None:
+    repository = InMemoryUsers(
+        (
+            User("!11111111", role=UserRole.ADMIN),
+            User("!22222222"),
+        )
+    )
+    handler = CommandHandler([BlockCommand(ModerationService(repository))])
+
+    response = handler.handle(Message(node_id="!11111111", text="!bloquear !22222222"))
+
+    assert response[0].text == "Usuário !22222222 bloqueado."
+    assert repository.get("!22222222") == User("!22222222", blocked=True)
+
+
+def test_unblock_command_unblocks_user() -> None:
+    repository = InMemoryUsers(
+        (
+            User("!11111111", role=UserRole.ADMIN),
+            User("!22222222", blocked=True),
+        )
+    )
+    handler = CommandHandler([UnblockCommand(ModerationService(repository))])
+
+    response = handler.handle(Message(node_id="!11111111", text="!desbloquear !22222222"))
+
+    assert response[0].text == "Usuário !22222222 desbloqueado."
+    assert repository.get("!22222222") == User("!22222222")
+
+
+def test_silence_command_accepts_custom_duration() -> None:
+    repository = InMemoryUsers(
+        (
+            User("!11111111", role=UserRole.ADMIN),
+            User("!22222222"),
+        )
+    )
+    handler = CommandHandler([SilenceCommand(ModerationService(repository))])
+
+    response = handler.handle(Message(node_id="!11111111", text="!silenciar !22222222 15"))
+
+    assert response[0].text == "Usuário !22222222 silenciado por 15 minutos."
