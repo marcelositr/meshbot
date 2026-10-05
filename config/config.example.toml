@@ -13,8 +13,6 @@
 # ------------------------------------------------------------
 # AMBIENTE
 # ------------------------------------------------------------
-# development = simulador local
-# production  = equipamento Meshtastic real
 environment = "development"
 
 # ------------------------------------------------------------
@@ -34,17 +32,12 @@ transport = "simulator"
 # ------------------------------------------------------------
 # MESHTASTIC
 # ------------------------------------------------------------
-# Nome do canal lógico utilizado na rede real.
 channel_name = "LongFast"
-
-# Índice do canal, quando aplicável.
 channel_index = 0
 
 # ------------------------------------------------------------
 # ADMINISTRADORES
 # ------------------------------------------------------------
-# Node IDs que terão privilégios administrativos.
-#
 # Exemplo:
 # admins = ["!12345678", "!87654321"]
 #
@@ -54,18 +47,11 @@ admins = []
 # ------------------------------------------------------------
 # CADASTRO DE USUÁRIOS
 # ------------------------------------------------------------
-# true  = novos usuários precisam de autorização
-# false = novos usuários podem ser registrados automaticamente
 registration_requires_admin = true
 
 # ------------------------------------------------------------
 # MODERAÇÃO
 # ------------------------------------------------------------
-# Duração padrão do silêncio, em minutos.
-#
-# 30   = meia hora
-# 60   = uma hora
-# 1440 = 24 horas
 default_silence_minutes = 30
 
 # ------------------------------------------------------------
@@ -74,9 +60,30 @@ default_silence_minutes = 30
 command_prefix = "/"
 
 # ------------------------------------------------------------
+# ENVIO DE MENSAGENS
+# ------------------------------------------------------------
+# Intervalo entre mensagens consecutivas da mesma resposta.
+[messaging]
+message_delay_seconds = 5
+
+# ------------------------------------------------------------
 # TEMPO
 # ------------------------------------------------------------
-weather_location = "Ribeirão Preto, SP"
+# Provedor usado para obter a previsão.
+[weather]
+provider = "inmet"
+
+# Tempo máximo de espera por uma resposta do serviço.
+timeout_seconds = 30
+
+# O bot escolhe automaticamente manhã, tarde ou noite
+# de acordo com o horário atual.
+#
+# Estes horários são configuráveis para cada rede.
+[weather.periods]
+morning_start = "06:00"
+afternoon_start = "12:00"
+night_start = "18:00"
 
 # ------------------------------------------------------------
 # LOG
