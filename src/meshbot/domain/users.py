@@ -64,8 +64,8 @@ class User:
     silenced_until: datetime | None = None
 
     def __post_init__(self) -> None:
-        if not self.node_id.strip():
-            raise ValueError("node_id must not be empty.")
+        normalized_node_id = normalize_node_id(self.node_id)
+        object.__setattr__(self, "node_id", normalized_node_id)
 
         normalized_name = normalize_user_name(self.name)
         object.__setattr__(self, "name", normalized_name)
