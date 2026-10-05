@@ -59,3 +59,25 @@ def test_unknown_requester_cannot_register() -> None:
     service = UserService(InMemoryUsers())
 
     assert service.register("!99999999", "!22222222") == "requester_not_registered"
+
+
+def test_registered_user_can_set_name() -> None:
+    repository = InMemoryUsers((User("!11111111"),))
+    service = UserService(repository)
+
+    assert service.set_name("!11111111", "  Ana   Clara  ") == "name_updated"
+    assert repository.get("!11111111") == User("!11111111", name="Ana Clara")
+
+
+def test_registered_user_can_rename() -> None:
+    repository = InMemoryUsers((User("!11111111", name="Ana Clara"),))
+    service = UserService(repository)
+
+    assert service.set_name("!11111111", "João Pedro") == "name_updated"
+    assert repository.get("!11111111") == User("!11111111", name="João Pedro")
+
+
+def test_unregistered_user_cannot_set_name() -> None:
+    service = UserService(InMemoryUsers())
+
+    assert service.set_name("!99999999", "Ana Clara") == "requester_not_registered"
