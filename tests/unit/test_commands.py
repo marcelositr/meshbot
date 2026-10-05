@@ -159,7 +159,9 @@ def test_silence_command_accepts_custom_duration() -> None:
         [SilenceCommand(ModerationService(repository), ModerationNotifier(repository))]
     )
 
-    response = handler.handle(IncomingMessage(sender_id="!11111111", text="!silenciar !22222222 15"))
+    response = handler.handle(
+        IncomingMessage(sender_id="!11111111", text="!silenciar !22222222 15")
+    )
 
     assert [message.recipient_id for message in response] == ["!22222222", "!11111111"]
     assert response[0].text == "MeshBot: Você foi silenciado por 15 minutos."
