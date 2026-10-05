@@ -4,7 +4,12 @@ from datetime import UTC, datetime, timedelta
 
 from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.bot import MeshBot
-from meshbot.application.commands import CommandHandler, NameCommand, PingCommand, RegisterCommand
+from meshbot.application.commands import (
+    CommandHandler,
+    NameCommand,
+    PingCommand,
+    RegisterCommand,
+)
 from meshbot.application.users import UserService
 from meshbot.domain.messages import OutgoingMessage
 from meshbot.domain.users import User
@@ -28,8 +33,14 @@ class InMemoryUsers:
 def make_bot(repository: InMemoryUsers) -> tuple[MeshBot, SimulatorTransport]:
     transport = SimulatorTransport()
     user_service = UserService(repository)
-    handler = CommandHandler(\n        [RegisterCommand(user_service), NameCommand(user_service), PingCommand()]\n    )
-    bot = MeshBot(transport, handler, authorization=AuthorizationPolicy(repository))
+    handler = CommandHandler(
+        [RegisterCommand(user_service), NameCommand(user_service), PingCommand()]
+    )
+    bot = MeshBot(
+        transport,
+        handler,
+        authorization=AuthorizationPolicy(repository),
+    )
     return bot, transport
 
 
@@ -38,7 +49,10 @@ def test_unregistered_user_is_told_how_to_register() -> None:
     transport.inject_message("!12345678", "!ping")
     assert bot.process_next_message() is True
     assert transport.sent_messages == [
-        OutgoingMessage(recipient_id="!12345678", text="Você não está cadastrado. Use !registrar.")
+        OutgoingMessage(
+            recipient_id="!12345678",
+            text="Você não está cadastrado. Use !registrar.",
+        )
     ]
 
 
@@ -47,15 +61,27 @@ def test_unregistered_user_can_register_and_then_use_commands() -> None:
     bot, transport = make_bot(repository)
     transport.inject_message("!12345678", "!registrar")
     assert bot.process_next_message() is True
-    assert transport.sent_messages == [\n        OutgoingMessage(recipient_id="!12345678", text="Cadastro realizado.")\n    ]
+    assert transport.sent_messages == [
+        OutgoingMessage(
+            recipient_id="!12345678",
+            text="Cadastro realizado.",
+        )
+    ]
     transport.sent_messages.clear()
     transport.inject_message("!12345678", "!nome João da Silva")
     assert bot.process_next_message() is True
-    assert transport.sent_messages == [\n        OutgoingMessage(\n            recipient_id="!12345678", text="Seu nome agora é João da Silva."\n        )\n    ]
+    assert transport.sent_messages == [
+        OutgoingMessage(
+            recipient_id="!12345678",
+            text="Seu nome agora é João da Silva.",
+        )
+    ]
     transport.sent_messages.clear()
     transport.inject_message("!12345678", "!ping")
     assert bot.process_next_message() is True
-    assert transport.sent_messages == [OutgoingMessage(recipient_id="!12345678", text="pong")]
+    assert transport.sent_messages == [
+        OutgoingMessage(recipient_id="!12345678", text="pong")
+    ]
 
 
 def test_blocked_user_is_silently_rejected() -> None:
@@ -66,7 +92,10 @@ def test_blocked_user_is_silently_rejected() -> None:
 
 
 def test_silenced_user_is_silently_rejected() -> None:
-    user = User("!12345678", silenced_until=datetime.now(UTC) + timedelta(minutes=5))
+    user = User(
+        "!12345678",
+        silenced_until=datetime.now(UTC) + timedelta(minutes=5),
+    )
     bot, transport = make_bot(InMemoryUsers((user,)))
     transport.inject_message("!12345678", "!ping")
     assert bot.process_next_message() is True
