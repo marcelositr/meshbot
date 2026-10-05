@@ -238,7 +238,7 @@ class DefenseCivilCommand:
             )
         ]
         for alert in alerts:
-            title = alert.headline or alert.event
+            title = " ".join((alert.headline or alert.event).split())
             responses.append(
                 OutgoingMessage(
                     recipient_id=message.sender_id,
