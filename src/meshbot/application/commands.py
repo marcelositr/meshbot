@@ -49,11 +49,11 @@ class RegisterCommand:
 
         result = self._user_service.register(message.sender_id, node_id)
         responses = {
-            "registered": f"Cadastrado: {node_id}",
-            "already_registered": "Já cadastrado.",
-            "admin_required": "Admin apenas.",
-            "requester_not_registered": "Não cadastrado.",
-            "invalid_node_id": "Use: !registrar node",
+            "registered": "Usuário cadastrado.",
+            "already_registered": "Este usuário já está cadastrado.",
+            "admin_required": "Apenas administradores podem fazer isso.",
+            "requester_not_registered": "Você não está cadastrado.",
+            "invalid_node_id": "Use: !registrar <node_id>.",
         }
         return (OutgoingMessage(recipient_id=message.sender_id, text=responses[result]),)
 
@@ -75,14 +75,15 @@ class NameCommand:
             return (
                 OutgoingMessage(
                     recipient_id=message.sender_id,
-                    text="Use: !nome nome",
+                    text="Use: !nome <nome>.",
                 ),
             )
 
-        result = self._user_service.set_name(message.sender_id, name)
+        normalized_name = " ".join(name.split())
+        result = self._user_service.set_name(message.sender_id, normalized_name)
         responses = {
-            "name_updated": f"Nome definido como {name}.",
-            "requester_not_registered": "Não cadastrado.",
+            "name_updated": f"Seu nome agora é {normalized_name}.",
+            "requester_not_registered": "Você não está cadastrado.",
             "invalid_name": "Nome inválido.",
         }
         return (
@@ -107,7 +108,7 @@ class TempoCommand:
         city = parts[1].strip() if len(parts) == 2 else ""
 
         if not city:
-            return (OutgoingMessage(recipient_id=message.sender_id, text="Use: !tempo cidade"),)
+            return (OutgoingMessage(recipient_id=message.sender_id, text="Use: !tempo <cidade>."),)
 
         try:
             forecast = self._weather_service.get_forecast(city)
@@ -122,14 +123,14 @@ class TempoCommand:
             return (
                 OutgoingMessage(
                     recipient_id=message.sender_id,
-                    text="Cidade ambígua. Use cidade/UF.",
+                    text="Informe a cidade e o estado.",
                 ),
             )
         except WeatherServiceUnavailableError:
             return (
                 OutgoingMessage(
                     recipient_id=message.sender_id,
-                    text="Tempo indisponível.",
+                    text="Não consegui consultar o tempo.",
                 ),
             )
 
@@ -199,7 +200,7 @@ class BlockCommand:
             return (
                 OutgoingMessage(
                     recipient_id=message.sender_id,
-                    text="Use: !bloquear node",
+                    text="Use: !bloquear <node_id>.",
                 ),
             )
 
@@ -208,11 +209,11 @@ class BlockCommand:
             return self._notifier.notify("blocked", message.sender_id, target_id)
 
         responses = {
-            "already_blocked": "Já bloqueado.",
-            "admin_required": "Admin apenas.",
-            "requester_not_registered": "Não cadastrado.",
-            "target_not_registered": "Alvo não cadastrado.",
-            "cannot_moderate_admin": "Alvo é admin.",
+            "already_blocked": "Este usuário já está bloqueado.",
+            "admin_required": "Apenas administradores podem fazer isso.",
+            "requester_not_registered": "Você não está cadastrado.",
+            "target_not_registered": "Este usuário não está cadastrado.",
+            "cannot_moderate_admin": "Não é possível moderar um administrador.",
         }
         return (OutgoingMessage(recipient_id=message.sender_id, text=responses[result]),)
 
@@ -239,7 +240,7 @@ class UnblockCommand:
             return (
                 OutgoingMessage(
                     recipient_id=message.sender_id,
-                    text="Use: !desbloquear node",
+                    text="Use: !desbloquear <node_id>.",
                 ),
             )
 
@@ -248,11 +249,11 @@ class UnblockCommand:
             return self._notifier.notify("unblocked", message.sender_id, target_id)
 
         responses = {
-            "not_blocked": "Não bloqueado.",
-            "admin_required": "Admin apenas.",
-            "requester_not_registered": "Não cadastrado.",
-            "target_not_registered": "Alvo não cadastrado.",
-            "cannot_moderate_admin": "Alvo é admin.",
+            "not_blocked": "Este usuário não está bloqueado.",
+            "admin_required": "Apenas administradores podem fazer isso.",
+            "requester_not_registered": "Você não está cadastrado.",
+            "target_not_registered": "Este usuário não está cadastrado.",
+            "cannot_moderate_admin": "Não é possível moderar um administrador.",
         }
         return (OutgoingMessage(recipient_id=message.sender_id, text=responses[result]),)
 
@@ -280,7 +281,7 @@ class SilenceCommand:
             return (
                 OutgoingMessage(
                     recipient_id=message.sender_id,
-                    text="Use: !silenciar node [min]",
+                    text="Use: !silenciar <node_id> <minutos>.",
                 ),
             )
 
@@ -292,7 +293,7 @@ class SilenceCommand:
                 return (
                     OutgoingMessage(
                         recipient_id=message.sender_id,
-                        text="Informe minutos.",
+                        text="Informe o tempo em minutos.",
                     ),
                 )
 
@@ -315,10 +316,10 @@ class SilenceCommand:
             )
 
         responses = {
-            "invalid_minutes": "Tempo inválido.",
-            "admin_required": "Admin apenas.",
-            "requester_not_registered": "Não cadastrado.",
-            "target_not_registered": "Alvo não cadastrado.",
-            "cannot_moderate_admin": "Alvo é admin.",
+            "invalid_minutes": "Informe um tempo válido.",
+            "admin_required": "Apenas administradores podem fazer isso.",
+            "requester_not_registered": "Você não está cadastrado.",
+            "target_not_registered": "Este usuário não está cadastrado.",
+            "cannot_moderate_admin": "Não é possível moderar um administrador.",
         }
         return (OutgoingMessage(recipient_id=message.sender_id, text=responses[result]),)
