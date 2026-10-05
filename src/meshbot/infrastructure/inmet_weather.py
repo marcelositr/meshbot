@@ -166,6 +166,13 @@ class InmetWeatherService:
         return "noite"
 
 
+def _load_json_response(response: Any) -> Any:
+    content = response.read()
+    if response.headers.get("Content-Encoding", "").lower() == "gzip":
+        content = gzip.decompress(content)
+    return json.loads(content)
+
+
 def _normalize(value: str) -> str:
     without_accents = unicodedata.normalize("NFKD", value)
     return "".join(
