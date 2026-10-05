@@ -1,6 +1,5 @@
 from meshbot.application.bot import MeshBot
 from meshbot.application.commands import CommandHandler, PingCommand
-from meshbot.domain.messages import OutgoingMessage
 from meshbot.infrastructure.simulator import SimulatorTransport
 
 
