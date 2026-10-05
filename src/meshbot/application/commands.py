@@ -43,33 +43,51 @@ class RegisterCommand:
         self._user_service = user_service
 
     def execute(self, message: IncomingMessage) -> tuple[OutgoingMessage, ...]:
-        """Register the requested node with a display name."""
-        parts = message.text.strip().split(maxsplit=2)
+        """Register the requested node."""
+        parts = message.text.strip().split(maxsplit=1)
+        node_id = parts[1].strip() if len(parts) == 2 else ""
 
-        node_id = parts[1].strip() if len(parts) >= 2 else ""
-        name = parts[2].strip() if len(parts) >= 3 else ""
-
-        if len(parts) < 3:
-            result = "invalid_name"
-        else:
-            result = self._user_service.register(
-                message.sender_id,
-                node_id,
-                name,
-            )
-
+        result = self._user_service.register(message.sender_id, node_id)
         responses = {
-            "registered": f"Usuário {name} cadastrado.",
+            "registered": f"Usuário {node_id} cadastrado.",
             "already_registered": f"Usuário {node_id} já está cadastrado.",
             "admin_required": "Apenas administradores podem cadastrar usuários.",
             "requester_not_registered": "Usuário não cadastrado.",
-            "invalid_node_id": "Use: !registrar <node_id> <nome>",
+            "invalid_node_id": "Use: !registrar <node_id>",
+        }
+        return (OutgoingMessage(recipient_id=message.sender_id, text=responses[result]),)
+
+
+class NameCommand:
+    """Set or replace the current user's display name."""
+
+    name = "nome"
+
+    def __init__(self, user_service: UserService) -> None:
+        self._user_service = user_service
+
+    def execute(self, message: IncomingMessage) -> tuple[OutgoingMessage, ...]:
+        """Set the sender's display name."""
+        parts = message.text.strip().split(maxsplit=1)
+        name = parts[1].strip() if len(parts) == 2 else ""
+
+        if not name:
+            return (
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
+                    text="Use: !nome <nome>",
+                ),
+            )
+
+        result = self._user_service.set_name(message.sender_id, name)
+        responses = {
+            "name_updated": f"Nome definido como {name}.",
+            "requester_not_registered": "Usuário não cadastrado.",
             "invalid_name": (
                 "Nome inválido. Use apenas letras, números e espaços "
                 "(máximo de 60 caracteres)."
             ),
         }
-
         return (
             OutgoingMessage(
                 recipient_id=message.sender_id,
