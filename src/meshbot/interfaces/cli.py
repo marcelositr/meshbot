@@ -7,6 +7,7 @@ from meshbot.application.bot import MeshBot
 from meshbot.application.commands import (
     BlockCommand,
     CommandHandler,
+    DefenseCivilCommand,
     NameCommand,
     PingCommand,
     RegisterCommand,
@@ -20,6 +21,7 @@ from meshbot.application.users import UserService
 from meshbot.config import ConfigurationError, load_settings
 from meshbot.domain.messages import OutgoingMessage
 from meshbot.domain.users import User, UserRole
+from meshbot.infrastructure.defense_civil import DefenseCivilAlertService
 from meshbot.infrastructure.inmet_weather import InmetWeatherService
 from meshbot.infrastructure.simulator import SimulatorTransport
 from meshbot.infrastructure.sqlite_users import SQLiteUserRepository
@@ -81,6 +83,7 @@ def main() -> None:
             UnblockCommand(moderation_service, moderation_notifier),
             SilenceCommand(moderation_service, moderation_notifier),
             TempoCommand(weather_service),
+            DefenseCivilCommand(DefenseCivilAlertService(settings.weather_timeout_seconds)),
         ],
         prefix=settings.command_prefix,
     )
