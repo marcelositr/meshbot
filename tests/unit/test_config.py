@@ -14,8 +14,19 @@ admins = ["!12345678"]
 registration_requires_admin = true
 default_silence_minutes = 30
 command_prefix = "/"
-weather_location = "Ribeirão Preto, SP"
 log_level = "INFO"
+
+[messaging]
+message_delay_seconds = 5
+
+[weather]
+provider = "inmet"
+timeout_seconds = 30
+
+[weather.periods]
+morning_start = "06:00"
+afternoon_start = "12:00"
+night_start = "18:00"
 """
 
 
@@ -30,6 +41,8 @@ def test_load_settings_returns_validated_settings(tmp_path: Path) -> None:
     assert settings.transport == "simulator"
     assert settings.admins == ("!12345678",)
     assert settings.default_silence_minutes == 30
+    assert settings.message_delay_seconds == 5
+    assert settings.weather_provider == "inmet"
 
 
 def test_development_cannot_use_real_transport(tmp_path: Path) -> None:
@@ -57,3 +70,14 @@ def test_invalid_silence_duration_is_rejected(tmp_path: Path) -> None:
 def test_missing_configuration_file_is_rejected(tmp_path: Path) -> None:
     with pytest.raises(ConfigurationError, match="not found"):
         load_settings(tmp_path / "missing.toml")
+
+
+def test_negative_message_delay_is_rejected(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        VALID_CONFIG.replace("message_delay_seconds = 5", "message_delay_seconds = -1"),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigurationError, match="zero or greater"):
+        load_settings(config)
