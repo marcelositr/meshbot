@@ -64,9 +64,8 @@ class WeatherBulletinWorker:
             slot = self._active_slot(current)
             if slot is not None:
                 slot_key = (current.date().isoformat(), slot[0])
-                if slot_key != self._last_slot:
-                    if self._publish(slot[0]):
-                        self._last_slot = slot_key
+                if slot_key != self._last_slot and self._publish(slot[0]):
+                    self._last_slot = slot_key
 
             self._sleep(1.0)
         logger.info("Automatic weather bulletin worker stopped.")
