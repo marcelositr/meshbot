@@ -83,7 +83,10 @@ def main() -> None:
             UnblockCommand(moderation_service, moderation_notifier),
             SilenceCommand(moderation_service, moderation_notifier),
             TempoCommand(weather_service),
-            DefenseCivilCommand(DefenseCivilAlertService(settings.weather_timeout_seconds)),
+            DefenseCivilCommand(
+                DefenseCivilAlertService(settings.weather_timeout_seconds),
+                settings=settings.defense_civil,
+            ),
         ],
         prefix=settings.command_prefix,
     )
