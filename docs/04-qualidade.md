@@ -7,7 +7,7 @@ Toda alteração relevante deve passar por:
 ~~~text
 pytest
 ruff check .
-mypy src
+mypy
 ~~~
 
 O projeto usa mypy strict e Ruff com regras de erros, imports, bugs comuns, modernização e simplificação.
