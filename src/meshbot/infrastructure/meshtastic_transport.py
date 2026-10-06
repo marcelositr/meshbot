@@ -26,13 +26,13 @@ class MeshtasticTransport:
         self._channel_index = channel_index
         self._incoming: deque[IncomingMessage] = deque()
         self._connected = False
-        self._interface = self._create_interface(
-            transport, device, interface_factory
-        )
         self._pub = pubsub_module or self._load_pubsub()
         self._pub.subscribe(self._on_connection_established, "meshtastic.connection.established")
         self._pub.subscribe(self._on_connection_lost, "meshtastic.connection.lost")
         self._pub.subscribe(self._on_text, "meshtastic.receive.text")
+        self._interface = self._create_interface(
+            transport, device, interface_factory
+        )
 
     @property
     def is_connected(self) -> bool:
