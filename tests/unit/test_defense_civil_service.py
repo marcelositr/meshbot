@@ -2,6 +2,7 @@ from xml.etree import ElementTree as ET
 
 from meshbot.application.defense_civil import DefenseCivilAlert
 from meshbot.infrastructure.defense_civil import DefenseCivilAlertService
+from meshbot.infrastructure.inmet_weather import Municipality
 
 
 def make_xml_alert(
@@ -104,3 +105,79 @@ def test_defense_civil_rejects_expired_alert() -> None:
 
 def test_defense_civil_accepts_future_alert() -> None:
     assert DefenseCivilAlertService._is_active("2099-01-01T00:00:00+00:00")
+
+
+class FakeResponse:
+    def __init__(self, content: bytes) -> None:
+        self.content = content
+
+    def raise_for_status(self) -> None:
+        return None
+
+
+class FakeResolver:
+    def resolve(self, query: str) -> Municipality:
+        return Municipality(code=123, name="Ituverava", uf="SP")
+
+
+def test_defense_civil_update_supersedes_previous_alert(monkeypatch) -> None:
+    previous = make_xml_alert(identifier="alert-1", event="Alerta antigo")
+    update = make_xml_alert(
+        identifier="alert-2",
+        msg_type="Update",
+        references="defesa@example.gov.br,alert-1,2026-10-05T10:00:00-03:00",
+        event="Alerta atualizado",
+    )
+    xml = f"<feed>{previous}{update}</feed>".encode()
+
+    monkeypatch.setattr(
+        "meshbot.infrastructure.defense_civil.requests.get",
+        lambda *args, **kwargs: FakeResponse(xml),
+    )
+    service = DefenseCivilAlertService(resolver=FakeResolver())
+
+    alerts = service.get_alerts("Ituverava/SP")
+
+    assert tuple(alert.identifier for alert in alerts) == ("alert-2",)
+
+
+def test_defense_civil_cancel_removes_previous_alert(monkeypatch) -> None:
+    previous = make_xml_alert(identifier="alert-1", event="Alerta cancelado")
+    cancel = f"""
+    <alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+      <identifier>alert-cancel</identifier>
+      <sender>defesa@example.gov.br</sender>
+      <sent>2026-10-05T12:00:00-03:00</sent>
+      <status>Actual</status>
+      <msgType>Cancel</msgType>
+      <scope>Public</scope>
+      <references>defesa@example.gov.br,alert-1,2026-10-05T10:00:00-03:00</references>
+    </alert>
+    """
+    xml = f"<feed>{previous}{cancel}</feed>".encode()
+
+    monkeypatch.setattr(
+        "meshbot.infrastructure.defense_civil.requests.get",
+        lambda *args, **kwargs: FakeResponse(xml),
+    )
+    service = DefenseCivilAlertService(resolver=FakeResolver())
+
+    alerts = service.get_alerts("Ituverava/SP")
+
+    assert alerts == ()
+
+
+def test_defense_civil_ignores_non_public_scope(monkeypatch) -> None:
+    private_alert = make_xml_alert(identifier="private-1").replace(
+        "<scope>Public</scope>",
+        "<scope>Private</scope>",
+    )
+    xml = f"<feed>{private_alert}</feed>".encode()
+
+    monkeypatch.setattr(
+        "meshbot.infrastructure.defense_civil.requests.get",
+        lambda *args, **kwargs: FakeResponse(xml),
+    )
+    service = DefenseCivilAlertService(resolver=FakeResolver())
+
+    assert service.get_alerts("Ituverava/SP") == ()
