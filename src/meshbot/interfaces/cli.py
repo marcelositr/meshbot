@@ -1,6 +1,7 @@
 """Command-line interface for MeshBot."""
 
 from pathlib import Path
+from threading import Event, Thread
 
 from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.bot import MeshBot
@@ -76,60 +77,7 @@ def main() -> None:
     moderation_notifier = ModerationNotifier(user_repository)
 
     transport: SimulatorTransport | MeshtasticTransport
-    if settings.transport == "simulator":
-        transport = SimulatorTransport(on_send=display_message)
-    else:
-        transport = MeshtasticTransport(
-            settings.transport,
-            channel_index=settings.channel_index,
-            device=settings.device,
-        )
-    defense_civil_worker = None
-    if settings.defense_civil.automatic_enabled:
-        defense_repository = SQLiteDefenseCivilAlertRepository(Path(settings.database_path))
-        defense_state = DefenseCivilStateService(defense_repository)
-        defense_delivery = DefenseCivilDelivery(
-            CompactDefenseCivilAlertFormatter(settings.defense_civil.max_message_length),
-            LocationDefenseCivilTargetResolver(settings.defense_civil.location),
-            settings.defense_civil.recipient_id,
-        )
-        defense_dispatcher = DefenseCivilEventDispatcher(defense_delivery, transport)
-        defense_civil_worker = DefenseCivilPoller(
-            DefenseCivilAlertService(settings.weather_timeout_seconds),
-            defense_state,
-            poll_interval_seconds=settings.defense_civil.poll_interval_seconds,
-            on_events=defense_dispatcher.dispatch,
-        )
-
-    weather_service = InmetWeatherService(
-        timeout_seconds=settings.weather_timeout_seconds,
-        morning_start=settings.weather_morning_start,
-        afternoon_start=settings.weather_afternoon_start,
-        night_start=settings.weather_night_start,
-    )
-    user_service = UserService(user_repository)
-    command_handler = CommandHandler(
-        [
-            PingCommand(),
-            RegisterCommand(user_service),
-            NameCommand(user_service),
-            BlockCommand(moderation_service, moderation_notifier),
-            UnblockCommand(moderation_service, moderation_notifier),
-            SilenceCommand(moderation_service, moderation_notifier),
-            TempoCommand(weather_service),
-            DefenseCivilCommand(
-                DefenseCivilAlertService(settings.weather_timeout_seconds),
-                settings=settings.defense_civil,
-            ),
-        ],
-        prefix=settings.command_prefix,
-    )
-    bot = MeshBot(
-        transport,
-        command_handler,
-        authorization=AuthorizationPolicy(user_repository),
-        message_delay_seconds=settings.message_delay_seconds,
-    )
+    workers = (defense_civil_worker,) if defense_civil_worker is not None else ()
 
     if settings.transport == "simulator":
         print(f"{settings.name} - simulator")
@@ -138,38 +86,57 @@ def main() -> None:
         print("          !12345678 !defesacivil Ituverava/SP")
         print("Digite 'exit' para sair.")
         assert isinstance(transport, SimulatorTransport)
-        _run_simulator(transport, bot)
+        _run_simulator(transport, bot, workers)
         return
 
     assert isinstance(transport, MeshtasticTransport)
     print(f"{settings.name} - Meshtastic ({settings.transport})")
     try:
-        workers = (defense_civil_worker,) if defense_civil_worker is not None else ()
         ProductionRuntime(bot, transport, workers=workers).run()
     except (KeyboardInterrupt, EOFError):
         return
 
+def _run_simulator(
+    transport: SimulatorTransport,
+    bot: MeshBot,
+    workers: tuple[object, ...] = (),
+) -> None:
+    stop_event = Event()
+    threads: list[Thread] = []
+    for worker in workers:
+        thread = Thread(
+            target=worker.run,
+            args=(stop_event,),
+            name="MeshBotBackgroundWorker",
+            daemon=True,
+        )
+        thread.start()
+        threads.append(thread)
 
-def _run_simulator(transport: SimulatorTransport, bot: MeshBot) -> None:
-    while True:
-        try:
-            line = input("> ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print()
-            return
+    try:
+        while True:
+            try:
+                line = input("> ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print()
+                return
 
-        if line.lower() == "exit":
-            return
+            if line.lower() == "exit":
+                return
 
-        if not line:
-            continue
+            if not line:
+                continue
 
-        try:
-            node_id, text = line.split(maxsplit=1)
-        except ValueError:
-            print("Formato inválido. Use: <node_id> <mensagem>")
-            continue
+            try:
+                node_id, text = line.split(maxsplit=1)
+            except ValueError:
+                print("Formato inválido. Use: <node_id> <mensagem>")
+                continue
 
-        transport.inject_message(node_id, text)
-        bot.process_next_message()
-        transport.sent_messages.clear()
+            transport.inject_message(node_id, text)
+            bot.process_next_message()
+            transport.sent_messages.clear()
+    finally:
+        stop_event.set()
+        for thread in threads:
+            thread.join()
