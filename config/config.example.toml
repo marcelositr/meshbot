@@ -5,130 +5,209 @@
 # Copie este arquivo para config/config.toml.
 # O arquivo config.toml é ignorado pelo Git.
 #
-# A configuração padrão é segura: usa o simulador e não
-# transmite em uma rede Meshtastic real.
+# Se você não sabe o que uma opção faz, prefira manter o valor
+# padrão. As explicações abaixo são para facilitar a configuração
+# por pessoas que não trabalham com programação.
 #
 # ============================================================
 
+
 # ------------------------------------------------------------
-# AMBIENTE
+# 1. FUNCIONALIDADES
 # ------------------------------------------------------------
+# Aqui você escolhe quais recursos opcionais do MeshBot serão
+# usados nesta instalação.
+#
+# true  = recurso ligado
+# false = recurso desligado
+#
+# Os recursos de cadastro, nomes, administração, bloqueio,
+# desbloqueio e silenciamento são básicos do MeshBot e não
+# aparecem aqui porque continuam sempre disponíveis.
+[features]
+
+# Responde !ping com "pong".
+ping = true
+
+# Permite consultar a previsão sob demanda:
+# !tempo <cidade>
+weather_command = true
+
+# Permite o envio automático dos boletins de tempo configurados
+# na seção [weather].
+weather_bulletin = true
+
+# Permite consultar alertas da Defesa Civil:
+# !defesacivil <cidade>
+defense_civil_command = true
+
+# Permite o monitoramento automático dos alertas da Defesa Civil.
+# Os detalhes ficam na seção [defesa_civil].
+defense_civil_monitor = true
+
+
+# ------------------------------------------------------------
+# 2. AMBIENTE
+# ------------------------------------------------------------
+# development = testes no simulador
+# production  = uso normal
 environment = "development"
 
+
 # ------------------------------------------------------------
-# IDENTIDADE DO BOT
+# 3. IDENTIDADE DO BOT
 # ------------------------------------------------------------
+# Nome mostrado pelo programa ao iniciar.
 name = "MeshBot"
 
+# Símbolo usado antes dos comandos.
+# Exemplo: !ping, !tempo Ribeirão Preto/SP
+command_prefix = "!"
+
+
 # ------------------------------------------------------------
-# TRANSPORTE
+# 4. CONEXÃO COM A REDE
 # ------------------------------------------------------------
-# simulator = rede/chat local (implementado)
-# wifi      = Meshtastic via Wi-Fi (planejado)
-# bluetooth = Meshtastic via Bluetooth (planejado)
-# usb       = Meshtastic via USB (planejado)
+# simulator = simulador local, recomendado para testes
+# wifi      = Meshtastic via Wi-Fi
+# bluetooth = Meshtastic via Bluetooth
+# usb       = Meshtastic via USB
 transport = "simulator"
 
-# ------------------------------------------------------------
-# MESHTASTIC
-# ------------------------------------------------------------
+# Nome do canal Meshtastic.
 channel_name = "LongFast"
+
+# Número do canal usado pelo bot.
 channel_index = 0
-# device = "/dev/ttyUSB0"   # USB: porta serial
-# device = "192.168.1.50"  # Wi-Fi: endereço IP
-# device = "AA:BB:CC:DD:EE:FF"  # Bluetooth: endereço
+
+# Só é necessário para algumas formas de conexão.
+# Exemplos:
+# device = "/dev/ttyUSB0"          # USB
+# device = "192.168.1.50"         # Wi-Fi
+# device = "AA:BB:CC:DD:EE:FF"   # Bluetooth
+
 
 # ------------------------------------------------------------
-# ADMINISTRADORES
+# 5. ADMINISTRADORES
 # ------------------------------------------------------------
+# Coloque aqui os node IDs dos administradores.
 # Exemplo:
 # admins = ["!12345678", "!87654321"]
 #
 # Administradores não podem moderar outros administradores.
 admins = []
 
+
 # ------------------------------------------------------------
-# BANCO DE DADOS
+# 6. BANCO DE DADOS
 # ------------------------------------------------------------
-# Banco SQLite usado para usuários e moderação.
+# Arquivo usado para guardar cadastro e moderação.
 database_path = "data/meshbot.db"
 
+
 # ------------------------------------------------------------
-# MODERAÇÃO
+# 7. MODERAÇÃO
 # ------------------------------------------------------------
+# Tempo padrão de silenciamento, em minutos.
 default_silence_minutes = 30
 
-# ------------------------------------------------------------
-# COMANDOS
-# ------------------------------------------------------------
-# Use ! para comandos do bot.
-command_prefix = "!"
 
 # ------------------------------------------------------------
-# LOG
+# 8. LOG
 # ------------------------------------------------------------
-# DEBUG, INFO, WARNING ou ERROR
+# DEBUG = mais detalhes para diagnóstico
+# INFO  = recomendado
+# WARNING = somente avisos
+# ERROR = somente erros
 log_level = "INFO"
 
+
 # ------------------------------------------------------------
-# ENVIO DE MENSAGENS
+# 9. ENVIO DE MENSAGENS
 # ------------------------------------------------------------
-# Intervalo entre mensagens consecutivas da mesma resposta.
+# Intervalo, em segundos, entre mensagens consecutivas.
+# Isso ajuda a evitar que uma resposta longa seja transmitida
+# toda de uma vez.
 [messaging]
 message_delay_seconds = 5
 
+
 # ------------------------------------------------------------
-# TEMPO
+# 10. TEMPO
 # ------------------------------------------------------------
-# Provedor usado para obter a previsão.
 [weather]
+
+# Serviço usado para consultar a previsão.
 provider = "inmet"
 
-# Tempo máximo de espera por uma resposta do serviço.
+# Tempo máximo de espera, em segundos.
 timeout_seconds = 30
 
-# O bot escolhe automaticamente manhã, tarde ou noite
-# de acordo com o horário atual.
-#
-# Estes horários são configuráveis para cada rede.
+# Horários usados pelo bot para separar manhã, tarde e noite.
 [weather.periods]
 morning_start = "06:00"
 afternoon_start = "12:00"
 night_start = "18:00"
 
-# Boletim automático do tempo: desligado por padrão.
-# Quando ativado, envia uma única mensagem por janela:
-# horário configurado até +1 minuto.
+# Envio automático de boletim: desligado por padrão.
+# Para usar, também deixe weather_bulletin = true em [features].
 automatic_enabled = false
+
+# Cidade usada no boletim automático.
+# Exemplo:
 # location = "Ribeirão Preto/SP"
+
+# Destino do boletim automático.
+# ^all = todos os nós da rede.
+# Exemplo:
 # recipient_id = "^all"
 
+
 # ------------------------------------------------------------
-# DEFESA CIVIL
+# 11. DEFESA CIVIL
 # ------------------------------------------------------------
-# A consulta é feita sob demanda com:
-# !defesacivil <cidade>
-#
-# mode:
-# normal    = resposta curta
-# attention = inclui urgência e instruções
-# emergency = inclui descrição, urgência, certeza e instruções
-#
-# Os campos show_* abaixo podem substituir o comportamento do
-# modo escolhido quando a rede precisar de um ajuste específico.
 [defesa_civil]
+
+# Ativa a consulta de Defesa Civil.
+# Se false, !defesacivil não fará consultas.
 enabled = true
+
+# Como os alertas serão apresentados:
+#
+# normal    = resposta mais curta
+# attention = acrescenta urgência e instruções
+# emergency = acrescenta descrição, urgência, certeza e instruções
 mode = "normal"
+
+# Número máximo de alertas mostrados em uma consulta.
 max_alerts = 5
+
+# Tamanho máximo de cada mensagem enviada pelo rádio.
 max_message_length = 180
 
-# Transmissão automática de alertas: desligada por padrão.
+# Monitoramento automático de alertas: desligado por padrão.
+# Para usar, também deixe defense_civil_monitor = true em [features].
 automatic_enabled = false
+
+# Cidade/região monitorada automaticamente.
+# Exemplo:
 # location = "Ribeirão Preto/SP"
+
+# Destino dos alertas automáticos.
+# ^all = todos os nós da rede.
+# Exemplo:
 # recipient_id = "^all"
+
+# Intervalo entre consultas ao serviço, em segundos.
+# Exemplo:
 # poll_interval_seconds = 300
 
-# Se forem omitidos, o modo escolhido fornece os padrões.
+# ------------------------------------------------------------
+# AJUSTE FINO DA APRESENTAÇÃO DOS ALERTAS
+# ------------------------------------------------------------
+# Normalmente não é preciso alterar estas opções.
+# Se forem omitidas, o modo escolhido acima define os padrões.
+#
 # show_severity = true
 # show_description = false
 # show_instruction = false
