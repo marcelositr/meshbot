@@ -4,6 +4,39 @@ from meshbot.application.defense_civil import DefenseCivilAlert
 from meshbot.infrastructure.defense_civil import DefenseCivilAlertService
 
 
+def make_xml_alert(
+    *,
+    identifier: str,
+    msg_type: str = "Alert",
+    references: str = "",
+    event: str = "Chuva intensa",
+    area: str = "Ituverava/SP",
+    expires: str = "2099-01-01T00:00:00-03:00",
+) -> str:
+    return f"""
+    <alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
+      <identifier>{identifier}</identifier>
+      <sender>defesa@example.gov.br</sender>
+      <sent>2026-10-05T10:00:00-03:00</sent>
+      <status>Actual</status>
+      <msgType>{msg_type}</msgType>
+      <references>{references}</references>
+      <info>
+        <event>{event}</event>
+        <urgency>Immediate</urgency>
+        <severity>Severe</severity>
+        <certainty>Observed</certainty>
+        <area><areaDesc>{area}</areaDesc></area>
+        <headline>{event} em Ituverava</headline>
+        <description>Evite áreas de risco.</description>
+        <instruction>Procure abrigo.</instruction>
+        <onset>2026-10-05T12:00:00-03:00</onset>
+        <expires>{expires}</expires>
+      </info>
+    </alert>
+    """
+
+
 def test_defense_civil_matches_city_and_uf() -> None:
     assert DefenseCivilAlertService._matches_location(
         "Ituverava/SP, Guará/SP",
@@ -21,31 +54,46 @@ def test_defense_civil_does_not_match_other_city() -> None:
 
 
 def test_defense_civil_parses_namespaced_cap_info() -> None:
-    xml = """
-    <alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
-      <info>
-        <event>Chuva intensa</event>
-        <severity>Severo</severity>
-        <area><areaDesc>Ituverava/SP</areaDesc></area>
-        <headline>Chuva intensa em Ituverava</headline>
-        <description>Evite áreas de risco.</description>
-        <expires>2026-10-05T23:00:00-03:00</expires>
-      </info>
-    </alert>
-    """
-    root = ET.fromstring(xml)
-    info = next(iter(root))
+    root = ET.fromstring(make_xml_alert(identifier="alert-1"))
+    info = next(child for child in root if child.tag.endswith("info"))
 
-    alert = DefenseCivilAlertService._parse_info(info)
+    parsed = DefenseCivilAlertService._parse_info(
+        info=info,
+        identifier="alert-1",
+        sender="defesa@example.gov.br",
+        sent="2026-10-05T10:00:00-03:00",
+        status="Actual",
+        msg_type="Alert",
+        references=(),
+    )
 
-    assert alert == DefenseCivilAlert(
+    assert parsed == DefenseCivilAlert(
+        identifier="alert-1",
+        sender="defesa@example.gov.br",
+        sent="2026-10-05T10:00:00-03:00",
+        status="Actual",
+        msg_type="Alert",
+        references=(),
         event="Chuva intensa",
-        severity="Severo",
+        severity="Severe",
+        urgency="Immediate",
+        certainty="Observed",
         area="Ituverava/SP",
         headline="Chuva intensa em Ituverava",
         description="Evite áreas de risco.",
-        expires="2026-10-05T23:00:00-03:00",
+        instruction="Procure abrigo.",
+        onset="2026-10-05T12:00:00-03:00",
+        expires="2099-01-01T00:00:00-03:00",
     )
+
+
+def test_defense_civil_parses_references() -> None:
+    references = DefenseCivilAlertService._parse_references(
+        "sender@example.gov.br,alert-1,2026-10-05T10:00:00-03:00 "
+        "sender@example.gov.br,alert-2,2026-10-05T11:00:00-03:00"
+    )
+    assert references == ("alert-1", "alert-2")
+
 
 def test_defense_civil_rejects_expired_alert() -> None:
     assert not DefenseCivilAlertService._is_active("2020-01-01T00:00:00+00:00")
