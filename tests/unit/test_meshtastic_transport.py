@@ -194,3 +194,94 @@ def test_connection_loss_recreates_interface_and_recovers() -> None:
     assert not second.closed
 
     transport.close()
+
+
+def test_rejects_unknown_transport() -> None:
+    pub = FakePubSub()
+    interface = FakeInterface()
+
+    try:
+        MeshtasticTransport(
+            "serial",
+            interface_factory=lambda _transport, _device: interface,
+            pubsub_module=pub,
+        )
+    except ValueError as exc:
+        assert "usb, wifi, or bluetooth" in str(exc)
+    else:
+        raise AssertionError("Expected ValueError")
+
+
+def test_close_is_idempotent() -> None:
+    pub = FakePubSub()
+    interface = FakeInterface()
+    transport = MeshtasticTransport(
+        "usb",
+        interface_factory=lambda _transport, _device: interface,
+        pubsub_module=pub,
+    )
+
+    transport.close()
+    transport.close()
+
+    assert interface.closed
+    assert pub.callbacks == {}
+
+
+def test_send_propagates_interface_failure() -> None:
+    pub = FakePubSub()
+
+    class FailingInterface(FakeInterface):
+        def sendText(self, text: str, **kwargs: Any) -> None:
+            raise RuntimeError("radio unavailable")
+
+    transport = MeshtasticTransport(
+        "usb",
+        interface_factory=lambda _transport, _device: FailingInterface(),
+        pubsub_module=pub,
+    )
+
+    try:
+        transport.send(OutgoingMessage("!12345678", "pong"))
+    except RuntimeError as exc:
+        assert str(exc) == "radio unavailable"
+    else:
+        raise AssertionError("Expected RuntimeError")
+
+
+def test_connection_loss_recreates_interface_after_failed_attempt() -> None:
+    from threading import Event
+
+    pub = FakePubSub()
+    first = FakeInterface()
+    second = FakeInterface()
+    attempts = 0
+    recovered = Event()
+
+    def factory(_transport: str, _device: str | None) -> FakeInterface:
+        nonlocal attempts
+        attempts += 1
+        if attempts == 2:
+            raise RuntimeError("temporary radio failure")
+        if attempts == 3:
+            pub.emit("meshtastic.connection.established")
+            recovered.set()
+            return second
+        return first
+
+    transport = MeshtasticTransport(
+        "usb",
+        interface_factory=factory,
+        pubsub_module=pub,
+        reconnect_initial_delay=0,
+        reconnect_max_delay=0.01,
+    )
+
+    pub.emit("meshtastic.connection.established")
+    pub.emit("meshtastic.connection.lost")
+
+    assert recovered.wait(1)
+    assert transport.is_connected
+    assert attempts >= 3
+
+    transport.close()
