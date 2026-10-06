@@ -14,7 +14,7 @@ class FakePubSub:
         self.callbacks[topic] = callback
 
     def unsubscribe(self, callback: Any, topic: str) -> None:
-        assert self.callbacks.pop(topic) is callback
+        assert self.callbacks.pop(topic) == callback
 
     def emit(self, topic: str, packet: dict[str, Any]) -> None:
         self.callbacks[topic](packet)
