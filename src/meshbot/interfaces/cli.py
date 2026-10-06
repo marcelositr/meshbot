@@ -1,6 +1,7 @@
 """Command-line interface for MeshBot."""
 
 from pathlib import Path
+import time
 
 from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.bot import MeshBot
@@ -23,6 +24,7 @@ from meshbot.domain.messages import OutgoingMessage
 from meshbot.domain.users import User, UserRole
 from meshbot.infrastructure.defense_civil import DefenseCivilAlertService
 from meshbot.infrastructure.inmet_weather import InmetWeatherService
+from meshbot.infrastructure.meshtastic_transport import MeshtasticTransport
 from meshbot.infrastructure.simulator import SimulatorTransport
 from meshbot.infrastructure.sqlite_users import SQLiteUserRepository
 
@@ -35,11 +37,6 @@ def main() -> None:
         settings = load_settings(config_path)
     except ConfigurationError as exc:
         raise SystemExit(f"Configuration error: {exc}") from exc
-
-    if settings.transport != "simulator":
-        raise SystemExit(
-            'The local chat requires transport = "simulator" in config/config.toml.'
-        )
 
     def display_message(message: OutgoingMessage) -> None:
         print(f"{message.recipient_id} <- {message.text}")
@@ -66,7 +63,14 @@ def main() -> None:
     )
     moderation_notifier = ModerationNotifier(user_repository)
 
-    transport = SimulatorTransport(on_send=display_message)
+    if settings.transport == "simulator":
+        transport = SimulatorTransport(on_send=display_message)
+    else:
+        transport = MeshtasticTransport(
+            settings.transport,
+            channel_index=settings.channel_index,
+            device=settings.device,
+        )
     weather_service = InmetWeatherService(
         timeout_seconds=settings.weather_timeout_seconds,
         morning_start=settings.weather_morning_start,
@@ -97,12 +101,27 @@ def main() -> None:
         message_delay_seconds=settings.message_delay_seconds,
     )
 
-    print(f"{settings.name} - simulator")
-    print("Digite uma mensagem no formato '<node_id> <mensagem>'.")
-    print("Exemplos: !12345678 !ping  |  !12345678 !tempo Ituverava/SP")
-    print("          !12345678 !defesacivil Ituverava/SP")
-    print("Digite 'exit' para sair.")
+    if settings.transport == "simulator":
+        print(f"{settings.name} - simulator")
+        print("Digite uma mensagem no formato '<node_id> <mensagem>'.")
+        print("Exemplos: !12345678 !ping  |  !12345678 !tempo Ituverava/SP")
+        print("          !12345678 !defesacivil Ituverava/SP")
+        print("Digite 'exit' para sair.")
+        _run_simulator(transport, bot)
+        return
 
+    print(f"{settings.name} - Meshtastic ({settings.transport})")
+    try:
+        while True:
+            bot.process_next_message()
+            time.sleep(0.1)
+    except (KeyboardInterrupt, EOFError):
+        return
+    finally:
+        transport.close()
+
+
+def _run_simulator(transport: SimulatorTransport, bot: MeshBot) -> None:
     while True:
         try:
             line = input("> ").strip()
