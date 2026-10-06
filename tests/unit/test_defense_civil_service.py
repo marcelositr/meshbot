@@ -120,6 +120,27 @@ class FakeResolver:
         return Municipality(code=123, name="Ituverava", uf="SP")
 
 
+
+def test_defense_civil_returns_global_active_snapshot(monkeypatch) -> None:
+    first = make_xml_alert(identifier="alert-1", area="Ituverava/SP")
+    second = make_xml_alert(identifier="alert-2", area="Ribeirão Preto/SP")
+    expired = make_xml_alert(
+        identifier="expired-1",
+        area="Franca/SP",
+        expires="2020-01-01T00:00:00-03:00",
+    )
+    xml = f"<feed>{first}{second}{expired}</feed>".encode()
+
+    monkeypatch.setattr(
+        "meshbot.infrastructure.defense_civil.requests.get",
+        lambda *args, **kwargs: FakeResponse(xml),
+    )
+    service = DefenseCivilAlertService()
+
+    alerts = service.get_all_alerts()
+
+    assert tuple(alert.identifier for alert in alerts) == ("alert-1", "alert-2")
+
 def test_defense_civil_update_supersedes_previous_alert(monkeypatch) -> None:
     previous = make_xml_alert(identifier="alert-1", event="Alerta antigo")
     update = make_xml_alert(
