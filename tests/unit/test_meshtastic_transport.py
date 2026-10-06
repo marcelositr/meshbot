@@ -151,6 +151,11 @@ def test_close_during_reconnect_closes_new_interface() -> None:
     transport.close()
     release_factory.set()
 
+    for _ in range(100):
+        if second.closed:
+            break
+        Event().wait(0.01)
+
     assert second.closed
 
 
