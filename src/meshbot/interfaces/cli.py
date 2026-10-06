@@ -41,6 +41,17 @@ from meshbot.infrastructure.sqlite_users import SQLiteUserRepository
 from meshbot.interfaces.simulator_ui import run_simulator_chat
 
 
+def _build_weather_service(settings):
+    if settings.weather_provider == "inmet":
+        return InmetWeatherService(
+            timeout_seconds=settings.weather_timeout_seconds,
+            morning_start=settings.weather_morning_start,
+            afternoon_start=settings.weather_afternoon_start,
+            night_start=settings.weather_night_start,
+        )
+    raise ConfigurationError(f"Unsupported weather provider: {settings.weather_provider!r}.")
+
+
 def main() -> None:
     """Run the local simulator chat."""
     config_path = Path("config/config.toml")
@@ -83,6 +94,7 @@ def main() -> None:
             channel_index=settings.channel_index,
             device=settings.device,
         )
+    defense_civil_service = None
     defense_civil_worker = None
     if (
         settings.features.defense_civil_monitor
@@ -95,20 +107,18 @@ def main() -> None:
             LocationDefenseCivilTargetResolver(settings.defense_civil.location),
             settings.defense_civil.recipient_id,
         )
+        defense_civil_service = DefenseCivilAlertService(
+            settings.defense_civil_timeout_seconds
+        )
         defense_dispatcher = DefenseCivilEventDispatcher(defense_delivery, transport)
         defense_civil_worker = DefenseCivilPoller(
-            DefenseCivilAlertService(settings.weather_timeout_seconds),
+            defense_civil_service,
             defense_state,
             poll_interval_seconds=settings.defense_civil.poll_interval_seconds,
             on_events=defense_dispatcher.dispatch,
         )
 
-    weather_service = InmetWeatherService(
-        timeout_seconds=settings.weather_timeout_seconds,
-        morning_start=settings.weather_morning_start,
-        afternoon_start=settings.weather_afternoon_start,
-        night_start=settings.weather_night_start,
-    )
+    weather_service = _build_weather_service(settings)
     weather_bulletin_worker = None
     if settings.features.weather_bulletin and settings.weather_automatic_enabled:
         weather_bulletin_worker = WeatherBulletinWorker(
@@ -136,9 +146,13 @@ def main() -> None:
     if settings.features.weather_command:
         commands.append(TempoCommand(weather_service))
     if settings.features.defense_civil_command:
+        if defense_civil_service is None:
+            defense_civil_service = DefenseCivilAlertService(
+                settings.defense_civil_timeout_seconds
+            )
         commands.append(
             DefenseCivilCommand(
-                DefenseCivilAlertService(settings.weather_timeout_seconds),
+                defense_civil_service,
                 settings=settings.defense_civil,
             )
         )
