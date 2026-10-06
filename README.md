@@ -71,7 +71,6 @@ mypy
 Para usar um dispositivo real, configure o transporte desejado:
 
 ```toml
-environment = "production"
 transport = "usb"
 ```
 
