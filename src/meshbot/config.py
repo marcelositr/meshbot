@@ -143,7 +143,7 @@ def _build_defense_civil_settings(raw: dict[str, Any]) -> DefenseCivilSettings:
         show_urgency=_optional_bool(raw, "show_urgency", defaults["show_urgency"]),
         show_certainty=_optional_bool(raw, "show_certainty", defaults["show_certainty"]),
         automatic_enabled=_optional_bool(raw, "automatic_enabled", False),
-        location=_optional_string(raw, "location", ""),
+        location=_optional_string_allow_empty(raw, "location", ""),
         recipient_id=_optional_string(raw, "recipient_id", "^all"),
         poll_interval_seconds=_optional_number(raw, "poll_interval_seconds", 300.0),
     )
@@ -268,6 +268,13 @@ def _optional_number(raw: dict[str, Any], key: str, default: float) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ConfigurationError(f"{key} must be a number.")
     return float(value)
+
+
+def _optional_string_allow_empty(raw: dict[str, Any], key: str, default: str) -> str:
+    value = raw.get(key, default)
+    if not isinstance(value, str):
+        raise ConfigurationError(f"{key} must be a string.")
+    return value.strip()
 
 
 def _optional_bool(raw: dict[str, Any], key: str, default: bool) -> bool:
