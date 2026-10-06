@@ -1,7 +1,6 @@
 """Command-line interface for MeshBot."""
 
 from pathlib import Path
-from threading import Event
 
 from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.bot import MeshBot
@@ -23,7 +22,7 @@ from meshbot.application.defense_civil_delivery import (
     LocationDefenseCivilTargetResolver,
 )
 from meshbot.application.defense_civil_poller import DefenseCivilPoller
-from meshbot.application.defense_civil_state import DefenseCivilAlertEvent, DefenseCivilStateService
+from meshbot.application.defense_civil_state import DefenseCivilStateService
 from meshbot.application.logging import configure_logging
 from meshbot.application.moderation import ModerationService
 from meshbot.application.moderation_notifications import ModerationNotifier
