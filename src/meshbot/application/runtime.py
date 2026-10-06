@@ -55,20 +55,21 @@ class ProductionRuntime:
         self._workers = workers
 
     def run(self, stop_event: Event | None = None) -> None:
-        """Process messages until the stop event is set, then close transport."""
+        """Process messages until stopped or a background worker fails."""
         event = stop_event or Event()
         threads: list[Thread] = []
         logger.info("Production runtime started.")
         try:
-            for worker in self._workers:
+            for index, worker in enumerate(self._workers, start=1):
                 thread = Thread(
-                    target=worker.run,
-                    args=(event,),
-                    name="MeshBotBackgroundWorker",
-                    daemon=True,
+                    target=self._run_worker,
+                    args=(worker, event),
+                    name=f"MeshBotBackgroundWorker-{index}",
+                    daemon=False,
                 )
                 thread.start()
                 threads.append(thread)
+
             while not event.is_set():
                 self._bot.process_next_message()
                 self._sleep(self._poll_interval_seconds)
@@ -78,3 +79,14 @@ class ProductionRuntime:
                 thread.join()
             logger.info("Production runtime stopping; closing transport.")
             self._transport.close()
+            logger.info("Production runtime stopped.")
+
+    @staticmethod
+    def _run_worker(worker: RuntimeWorker, stop_event: Event) -> None:
+        try:
+            worker.run(stop_event)
+        except Exception:
+            logger.exception(
+                "Background worker failed; requesting runtime shutdown."
+            )
+            stop_event.set()
