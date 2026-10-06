@@ -143,7 +143,7 @@ def test_defense_civil_update_supersedes_previous_alert(monkeypatch) -> None:
 
 def test_defense_civil_cancel_removes_previous_alert(monkeypatch) -> None:
     previous = make_xml_alert(identifier="alert-1", event="Alerta cancelado")
-    cancel = f"""
+    cancel = """
     <alert xmlns="urn:oasis:names:tc:emergency:cap:1.2">
       <identifier>alert-cancel</identifier>
       <sender>defesa@example.gov.br</sender>
