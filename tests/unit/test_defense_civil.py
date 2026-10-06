@@ -17,6 +17,7 @@ def make_alert(**overrides: object) -> DefenseCivilAlert:
         "sent": "2026-10-05T10:00:00-03:00",
         "status": "Actual",
         "msg_type": "Alert",
+        "scope": "Public",
         "references": (),
         "event": "Chuva intensa",
         "severity": "Severo",
