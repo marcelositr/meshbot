@@ -13,6 +13,7 @@ class DefenseCivilAlert:
     sent: str
     status: str
     msg_type: str
+    scope: str
     references: tuple[str, ...]
     event: str
     severity: str
