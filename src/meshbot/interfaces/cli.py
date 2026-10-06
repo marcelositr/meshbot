@@ -179,3 +179,7 @@ def main() -> None:
         ProductionRuntime(bot, transport, workers=workers).run()
     except (KeyboardInterrupt, EOFError):
         return
+
+
+if __name__ == "__main__":
+    main()
