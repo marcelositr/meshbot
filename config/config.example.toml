@@ -34,6 +34,9 @@ transport = "simulator"
 # ------------------------------------------------------------
 channel_name = "LongFast"
 channel_index = 0
+# device = "/dev/ttyUSB0"   # USB: porta serial
+# device = "192.168.1.50"  # Wi-Fi: endereço IP
+# device = "AA:BB:CC:DD:EE:FF"  # Bluetooth: endereço
 
 # ------------------------------------------------------------
 # ADMINISTRADORES
