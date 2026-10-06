@@ -47,7 +47,7 @@ The simulator accepts messages such as:
 
 The `!tempo` command resolves municipalities through IBGE and accepts `Cidade/UF` for ambiguous names.
 
-The `!defesacivil` command queries the official Defense Civil public alert feed for a municipality and reports active alerts. It is a read-only, on-demand query; the bot does not send automatic alerts.
+The `!defesacivil` command queries the official Defense Civil public alert feed for a municipality and reports the current active alerts. It is a read-only, on-demand query: each request is independent, and a previous response never suppresses a later query. CAP `Actual` alerts are considered, while `Update` and `Cancel` references are applied to the current feed before the response is built. Expired alerts are ignored. The response can be adapted through `defesa_civil.mode` (`normal`, `attention`, or `emergency`) and optional `show_*`, `max_alerts`, and `max_message_length` settings. The bot does not send automatic alerts.
 
 The `!registrar` command uses `!registrar <node_id>`. A registered user can set or replace their friendly display name with `!nome <nome>`. User names accept Unicode letters, numbers, and spaces, preserve uppercase/lowercase, normalize surrounding/repeated spaces, and reject punctuation, symbols, and emojis. Names are limited to 24 characters.
 
@@ -70,7 +70,7 @@ mypy src
 
 Copy `config/config.example.toml` to `config/config.toml` and edit the documented settings.
 
-The message interval and the morning/afternoon/night weather period boundaries are configurable so each network can choose its own operating behavior.
+The message interval and the morning/afternoon/night weather period boundaries are configurable so each network can choose its own operating behavior. Defense Civil presentation is also configurable so a network can keep responses compact in normal periods and expose more official alert context during attention or emergency periods.
 
 The `admins` setting defines the initial administrators. Administrative rules are enforced by the application and are not configurable.
 
