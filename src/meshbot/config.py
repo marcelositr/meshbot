@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from meshbot.application.defense_civil import DefenseCivilSettings
+
 
 class ConfigurationError(ValueError):
     """Raised when the MeshBot configuration is invalid."""
@@ -31,6 +33,7 @@ class Settings:
     weather_morning_start: str
     weather_afternoon_start: str
     weather_night_start: str
+    defense_civil: DefenseCivilSettings
     log_level: str
 
 
@@ -38,6 +41,31 @@ _ALLOWED_ENVIRONMENTS = {"development", "production"}
 _ALLOWED_TRANSPORTS = {"simulator", "wifi", "bluetooth", "usb"}
 _ALLOWED_LOG_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR"}
 _ALLOWED_WEATHER_PROVIDERS = {"inmet"}
+_ALLOWED_DEFENSE_CIVIL_MODES = {"normal", "attention", "emergency"}
+
+_DEFENSE_CIVIL_MODE_DEFAULTS = {
+    "normal": {
+        "show_severity": True,
+        "show_description": False,
+        "show_instruction": False,
+        "show_urgency": False,
+        "show_certainty": False,
+    },
+    "attention": {
+        "show_severity": True,
+        "show_description": False,
+        "show_instruction": True,
+        "show_urgency": True,
+        "show_certainty": False,
+    },
+    "emergency": {
+        "show_severity": True,
+        "show_description": True,
+        "show_instruction": True,
+        "show_urgency": True,
+        "show_certainty": True,
+    },
+}
 
 
 def load_settings(path: Path) -> Settings:
@@ -58,6 +86,11 @@ def _build_settings(raw: dict[str, Any]) -> Settings:
         messaging = _required_table(raw, "messaging")
         weather = _required_table(raw, "weather")
         periods = _required_table(weather, "periods")
+        defense_civil_raw = raw.get("defesa_civil", {})
+        if not isinstance(defense_civil_raw, dict):
+            raise ConfigurationError("defesa_civil must be a table.")
+        defense_civil = _build_defense_civil_settings(defense_civil_raw)
+
         settings = Settings(
             environment=_required_string(raw, "environment"),
             name=_required_string(raw, "name"),
@@ -74,6 +107,7 @@ def _build_settings(raw: dict[str, Any]) -> Settings:
             weather_morning_start=_required_string(periods, "morning_start"),
             weather_afternoon_start=_required_string(periods, "afternoon_start"),
             weather_night_start=_required_string(periods, "night_start"),
+            defense_civil=defense_civil,
             log_level=_required_string(raw, "log_level").upper(),
         )
     except KeyError as exc:
@@ -81,6 +115,32 @@ def _build_settings(raw: dict[str, Any]) -> Settings:
 
     _validate(settings)
     return settings
+
+
+def _build_defense_civil_settings(raw: dict[str, Any]) -> DefenseCivilSettings:
+    mode = _optional_string(raw, "mode", "normal").lower()
+    if mode not in _ALLOWED_DEFENSE_CIVIL_MODES:
+        raise ConfigurationError(
+            f"Invalid defesa_civil.mode: {mode!r}. "
+            f"Expected one of {sorted(_ALLOWED_DEFENSE_CIVIL_MODES)}."
+        )
+
+    defaults = _DEFENSE_CIVIL_MODE_DEFAULTS[mode]
+    return DefenseCivilSettings(
+        enabled=_optional_bool(raw, "enabled", True),
+        mode=mode,
+        max_alerts=_optional_int(raw, "max_alerts", 5),
+        max_message_length=_optional_int(raw, "max_message_length", 180),
+        show_severity=_optional_bool(raw, "show_severity", defaults["show_severity"]),
+        show_description=_optional_bool(
+            raw, "show_description", defaults["show_description"]
+        ),
+        show_instruction=_optional_bool(
+            raw, "show_instruction", defaults["show_instruction"]
+        ),
+        show_urgency=_optional_bool(raw, "show_urgency", defaults["show_urgency"]),
+        show_certainty=_optional_bool(raw, "show_certainty", defaults["show_certainty"]),
+    )
 
 
 def _validate(settings: Settings) -> None:
@@ -116,6 +176,14 @@ def _validate(settings: Settings) -> None:
 
     if settings.weather_timeout_seconds <= 0:
         raise ConfigurationError("weather_timeout_seconds must be greater than zero.")
+
+    if settings.defense_civil.max_alerts <= 0:
+        raise ConfigurationError("defesa_civil.max_alerts must be greater than zero.")
+
+    if not 60 <= settings.defense_civil.max_message_length <= 1000:
+        raise ConfigurationError(
+            "defesa_civil.max_message_length must be between 60 and 1000."
+        )
 
     for name, value in (
         ("weather_morning_start", settings.weather_morning_start),
@@ -164,6 +232,20 @@ def _optional_string(raw: dict[str, Any], key: str, default: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ConfigurationError(f"{key} must be a non-empty string.")
     return value.strip()
+
+
+def _optional_int(raw: dict[str, Any], key: str, default: int) -> int:
+    value = raw.get(key, default)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ConfigurationError(f"{key} must be an integer.")
+    return value
+
+
+def _optional_bool(raw: dict[str, Any], key: str, default: bool) -> bool:
+    value = raw.get(key, default)
+    if not isinstance(value, bool):
+        raise ConfigurationError(f"{key} must be true or false.")
+    return value
 
 
 def _required_admins(raw: dict[str, Any]) -> tuple[str, ...]:
