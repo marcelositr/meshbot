@@ -154,12 +154,12 @@ def main() -> None:
         print("          !12345678 !defesacivil Ituverava/SP")
         print("Digite 'exit' para sair.")
         assert isinstance(transport, SimulatorTransport)
-        workers_list: list[RuntimeWorker] = []
+        simulator_workers: list[RuntimeWorker] = []
         if defense_civil_worker is not None:
-            workers_list.append(defense_civil_worker)
+            simulator_workers.append(defense_civil_worker)
         if weather_bulletin_worker is not None:
-            workers_list.append(weather_bulletin_worker)
-        workers = tuple(workers_list)
+            simulator_workers.append(weather_bulletin_worker)
+        workers = tuple(simulator_workers)
         _run_simulator(transport, bot, workers)
         return
 
