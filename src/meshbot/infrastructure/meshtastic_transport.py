@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import logging
 from collections import deque
 from collections.abc import Callable
 from threading import Event, Lock, Thread
 from typing import Any
 
 from meshbot.domain.messages import IncomingMessage, OutgoingMessage
+
+logger = logging.getLogger(__name__)
 
 
 class MeshtasticTransport:
@@ -47,6 +50,7 @@ class MeshtasticTransport:
         self._interface = self._create_interface(
             transport, device, interface_factory
         )
+        logger.info("Meshtastic transport initialized: %s.", transport)
 
     @property
     def is_connected(self) -> bool:
@@ -61,14 +65,23 @@ class MeshtasticTransport:
 
     def send(self, message: OutgoingMessage) -> None:
         """Send a text message through the configured Meshtastic channel."""
-        self._interface.sendText(
-            message.text,
-            destinationId=message.recipient_id,
-            channelIndex=self._channel_index,
-        )
+        try:
+            self._interface.sendText(
+                message.text,
+                destinationId=message.recipient_id,
+                channelIndex=self._channel_index,
+            )
+        except Exception:
+            logger.exception("Meshtastic send failed to %s.", message.recipient_id)
+            raise
+        logger.debug("Meshtastic message sent to %s.", message.recipient_id)
 
     def close(self) -> None:
         """Unsubscribe callbacks and close the radio interface."""
+        if self._closed:
+            return
+
+        logger.info("Closing Meshtastic transport.")
         self._closed = True
         self._reconnect_stop.set()
         self._pub.unsubscribe(
@@ -84,10 +97,12 @@ class MeshtasticTransport:
     def _on_connection_established(self, *_: Any, **__: Any) -> None:
         self._connected = True
         self._reconnected.set()
+        logger.info("Meshtastic connection established.")
 
     def _on_connection_lost(self, *_: Any, **__: Any) -> None:
         self._connected = False
         self._reconnected.clear()
+        logger.warning("Meshtastic connection lost; starting reconnect.")
         self._start_reconnect()
 
     def _start_reconnect(self) -> None:
@@ -123,13 +138,24 @@ class MeshtasticTransport:
                             close()
                         return
                     self._interface = new_interface
+                    logger.info("Meshtastic interface recreated; waiting for connection.")
                 except Exception:
+                    logger.exception(
+                        "Meshtastic reconnect attempt failed; retrying in %.1fs.",
+                        delay,
+                    )
                     delay = min(delay * 2, self._reconnect_max_delay)
                     continue
 
                 self._reconnected.clear()
                 if self._reconnected.wait(self._reconnect_max_delay):
+                    logger.info("Meshtastic reconnection completed.")
                     return
+                logger.warning(
+                    "Meshtastic interface recreated but connection was not confirmed "
+                    "within %.1fs.",
+                    self._reconnect_max_delay,
+                )
                 delay = min(delay * 2, self._reconnect_max_delay)
         finally:
             self._reconnect_lock.release()
@@ -145,6 +171,7 @@ class MeshtasticTransport:
             return
 
         self._incoming.append(IncomingMessage(sender_id=sender_id, text=text))
+        logger.debug("Meshtastic message received from %s.", sender_id)
 
     @staticmethod
     def _load_pubsub() -> Any:
