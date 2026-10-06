@@ -80,6 +80,7 @@ class SimulatorChatUI:
         self._workers = workers
         self._stop_event = Event()
         self._threads: list[Thread] = []
+        self._message_queue: queue.Queue[None] = queue.Queue()
         self._events: queue.Queue[ChatEntry] = queue.Queue()
         self._history: deque[ChatEntry] = deque(maxlen=self._MAX_HISTORY)
         self._input = ""
@@ -106,6 +107,7 @@ class SimulatorChatUI:
         )
 
         self._start_workers()
+        self._start_message_processor()
 
         while self._running:
             self._drain_events()
@@ -117,6 +119,30 @@ class SimulatorChatUI:
                 continue
 
             self._handle_key(key)
+
+    def _start_message_processor(self) -> None:
+        thread = Thread(
+            target=self._process_messages,
+            name="MeshBotSimulatorMessageProcessor",
+            daemon=True,
+        )
+        thread.start()
+        self._threads.append(thread)
+
+    def _process_messages(self) -> None:
+        while not self._stop_event.is_set():
+            try:
+                self._message_queue.get(timeout=0.1)
+            except queue.Empty:
+                continue
+
+            if self._stop_event.is_set():
+                return
+
+            try:
+                self._bot.process_next_message()
+            except Exception as exc:
+                self.add_system_message(f"Falha ao processar mensagem: {exc}", "error")
 
     def _start_workers(self) -> None:
         for index, worker in enumerate(self._workers, start=1):
@@ -131,6 +157,7 @@ class SimulatorChatUI:
 
     def _stop_workers(self) -> None:
         self._stop_event.set()
+        self._message_queue.put(None)
         for thread in self._threads:
             thread.join()
 
@@ -195,8 +222,7 @@ class SimulatorChatUI:
         node_id, text = parsed
         self._add_entry(node_id, text, "incoming")
         self._transport.inject_message(node_id, text)
-        self._bot.process_next_message()
-        self._transport.sent_messages.clear()
+        self._message_queue.put(None)
 
     def add_outgoing_message(self, message: OutgoingMessage) -> None:
         """Queue a transport message for display in the UI thread."""
