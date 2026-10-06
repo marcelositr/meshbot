@@ -94,7 +94,7 @@ def main() -> None:
             channel_index=settings.channel_index,
             device=settings.device,
         )
-    defense_civil_service = None
+    defense_civil_service: DefenseCivilAlertService | None = None
     defense_civil_worker = None
     if (
         settings.features.defense_civil_monitor
