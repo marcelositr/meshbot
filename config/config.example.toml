@@ -97,3 +97,29 @@ timeout_seconds = 30
 morning_start = "06:00"
 afternoon_start = "12:00"
 night_start = "18:00"
+
+# ------------------------------------------------------------
+# DEFESA CIVIL
+# ------------------------------------------------------------
+# A consulta é feita sob demanda com:
+# !defesacivil <cidade>
+#
+# mode:
+# normal    = resposta curta
+# attention = inclui urgência e instruções
+# emergency = inclui descrição, urgência, certeza e instruções
+#
+# Os campos show_* abaixo podem substituir o comportamento do
+# modo escolhido quando a rede precisar de um ajuste específico.
+[defesa_civil]
+enabled = true
+mode = "normal"
+max_alerts = 5
+max_message_length = 180
+
+# Se forem omitidos, o modo escolhido fornece os padrões.
+# show_severity = true
+# show_description = false
+# show_instruction = false
+# show_urgency = false
+# show_certainty = false
