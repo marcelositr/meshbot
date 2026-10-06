@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 from meshbot.application.defense_civil import DefenseCivilAlert
 from meshbot.application.defense_civil_delivery import (
     CompactDefenseCivilAlertFormatter,
@@ -39,9 +41,7 @@ def test_formatter_builds_compact_alert() -> None:
 
 def test_formatter_splits_long_alert() -> None:
     alert = make_alert()
-    alert = DefenseCivilAlert(
-        **{**alert.__dict__, "instruction": "palavra " * 100},
-    )
+    alert = replace(alert, instruction="palavra " * 100)
 
     messages = CompactDefenseCivilAlertFormatter(60).format(alert)
 
