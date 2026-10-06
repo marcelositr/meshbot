@@ -194,6 +194,10 @@ def test_close_during_reconnect_does_not_publish_new_interface() -> None:
     closer.join(timeout=1)
 
     assert not closer.is_alive()
+    for _ in range(100):
+        if second.closed:
+            break
+        Event().wait(0.01)
     assert second.closed
 
 
