@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Protocol
 
 from meshbot.application.defense_civil import DefenseCivilAlert
@@ -50,8 +50,3 @@ class DefenseCivilStateService:
         for stored in self._repository.list_active():
             if stored.alert.identifier not in seen:
                 self._repository.upsert(stored.alert, active=False)
-
-    @staticmethod
-    def now() -> datetime:
-        """Return a timezone-aware UTC timestamp for state transitions."""
-        return datetime.now(UTC)
