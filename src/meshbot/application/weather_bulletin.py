@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable
-from datetime import datetime, timedelta
+from datetime import datetime, time
 from threading import Event
 from typing import Protocol
 
@@ -65,13 +65,13 @@ class WeatherBulletinWorker:
             if slot is not None:
                 slot_key = (current.date().isoformat(), slot[0])
                 if slot_key != self._last_slot:
-                    self._publish(slot[0])
-                    self._last_slot = slot_key
+                    if self._publish(slot[0]):
+                        self._last_slot = slot_key
 
             self._sleep(1.0)
         logger.info("Automatic weather bulletin worker stopped.")
 
-    def _active_slot(self, current: datetime) -> tuple[str, object] | None:
+    def _active_slot(self, current: datetime) -> tuple[str, time] | None:
         seconds_since_midnight = (
             current.hour * 3600 + current.minute * 60 + current.second
         )
@@ -81,7 +81,7 @@ class WeatherBulletinWorker:
                 return label, start
         return None
 
-    def _publish(self, period: str) -> None:
+    def _publish(self, period: str) -> bool:
         try:
             forecast = self._weather_service.get_forecast(self._location)
             text = self._format(period, forecast)
@@ -94,12 +94,14 @@ class WeatherBulletinWorker:
                 self._location,
                 self._recipient_id,
             )
+            return True
         except Exception:
             logger.exception(
                 "Automatic weather bulletin failed: period=%s location=%s.",
                 period,
                 self._location,
             )
+            return False
 
     @staticmethod
     def _format(period: str, forecast: WeatherForecast) -> str:
