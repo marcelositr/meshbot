@@ -33,6 +33,7 @@ class DefenseCivilPoller:
         state: DefenseCivilStateService,
         poll_interval_seconds: float = 300.0,
         sleep: Callable[[float], None] | None = None,
+        on_events: Callable[[DefenseCivilAlertEvent], None] | None = None,
     ) -> None:
         if poll_interval_seconds <= 0:
             raise ValueError("poll_interval_seconds must be greater than zero.")
@@ -41,6 +42,7 @@ class DefenseCivilPoller:
         self._state = state
         self._poll_interval_seconds = poll_interval_seconds
         self._sleep = sleep or Event().wait
+        self._on_events = on_events
 
     def poll_once(self) -> tuple[DefenseCivilAlertEvent, ...]:
         """Fetch and persist one successful feed snapshot."""
@@ -51,6 +53,9 @@ class DefenseCivilPoller:
             len(alerts),
             len(events),
         )
+        if self._on_events is not None:
+            for event in events:
+                self._on_events(event)
         return events
 
     def run(self, stop_event: Event | None = None) -> None:
