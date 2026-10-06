@@ -115,6 +115,12 @@ mode = "normal"
 max_alerts = 5
 max_message_length = 180
 
+# Transmissão automática de alertas: desligada por padrão.
+automatic_enabled = false
+# location = "Ribeirão Preto/SP"
+# recipient_id = "^all"
+# poll_interval_seconds = 300
+
 # Se forem omitidos, o modo escolhido fornece os padrões.
 # show_severity = true
 # show_description = false
