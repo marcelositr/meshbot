@@ -30,7 +30,7 @@ from meshbot.application.moderation_notifications import ModerationNotifier
 from meshbot.application.runtime import ProductionRuntime, RuntimeWorker
 from meshbot.application.users import UserService
 from meshbot.application.weather_bulletin import WeatherBulletinWorker
-from meshbot.config import ConfigurationError, load_settings
+from meshbot.config import ConfigurationError, Settings, load_settings
 from meshbot.domain.users import User, UserRole
 from meshbot.infrastructure.defense_civil import DefenseCivilAlertService
 from meshbot.infrastructure.inmet_weather import InmetWeatherService
@@ -41,7 +41,7 @@ from meshbot.infrastructure.sqlite_users import SQLiteUserRepository
 from meshbot.interfaces.simulator_ui import run_simulator_chat
 
 
-def _build_weather_service(settings):
+def _build_weather_service(settings: Settings) -> InmetWeatherService:
     if settings.weather_provider == "inmet":
         return InmetWeatherService(
             timeout_seconds=settings.weather_timeout_seconds,
