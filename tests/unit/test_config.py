@@ -45,6 +45,7 @@ def test_load_settings_returns_validated_settings(tmp_path: Path) -> None:
     assert settings.weather_provider == "inmet"
     assert settings.defense_civil.mode == "normal"
     assert settings.defense_civil.max_alerts == 5
+    assert not settings.weather_automatic_enabled
 
 
 def test_defense_civil_mode_changes_default_presentation(tmp_path: Path) -> None:
@@ -182,3 +183,43 @@ automatic_enabled = true
 
     with pytest.raises(ConfigurationError, match="location is required"):
         load_settings(config)
+
+
+
+def test_automatic_weather_requires_location(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        VALID_CONFIG
+        + """
+[weather]
+provider = "inmet"
+timeout_seconds = 30
+automatic_enabled = true
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigurationError, match="weather.location is required"):
+        load_settings(config)
+
+
+def test_automatic_weather_settings_are_loaded(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        VALID_CONFIG
+        + """
+[weather]
+provider = "inmet"
+timeout_seconds = 30
+automatic_enabled = true
+location = "Ribeirão Preto/SP"
+recipient_id = "^all"
+""",
+        encoding="utf-8",
+    )
+
+    settings = load_settings(config)
+
+    assert settings.weather_automatic_enabled
+    assert settings.weather_location == "Ribeirão Preto/SP"
+    assert settings.weather_recipient_id == "^all"
