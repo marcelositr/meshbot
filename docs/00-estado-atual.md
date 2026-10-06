@@ -6,9 +6,7 @@ O MeshBot possui um núcleo de aplicação funcional, mas ainda não é um gatew
 
 Hoje o fluxo completo entrada -> autorização -> comando -> serviço -> resposta funciona com o simulador. Usuários e moderação possuem persistência SQLite. Tempo e Defesa Civil possuem integrações externas reais.
 
-A principal lacuna estrutural é objetiva:
-
-**A configuração declara transportes de produção, mas a implementação disponível ainda é somente o simulador.**
+A principal lacuna estrutural agora está no ciclo de vida operacional: os adaptadores Meshtastic já existem e recebem/enviam mensagens, mas ainda falta reconexão, supervisão e observabilidade de produção.
 
 ## O que existe
 
@@ -90,11 +88,11 @@ A consulta é deliberadamente independente entre requisições. O sistema atual 
 
 ### Transporte Meshtastic real
 
-Ainda não existe implementação concreta para Wi-Fi, Bluetooth ou USB, nem descoberta de dispositivo, recepção, envio, reconexão, seleção de canal ou tratamento de perda de conexão.
+Existem adaptadores concretos para Wi-Fi, Bluetooth e USB, com recepção, envio, seleção por `channel_index`, dispositivo opcional e acompanhamento dos eventos de conexão. Ainda faltam reconexão, descoberta de dispositivo e supervisão operacional.
 
 ### Execução de produção
 
-environment=production é aceito pela configuração, mas a CLI atual exige o simulador.
+environment=production já seleciona o transporte Meshtastic na CLI. Ainda não é considerado pronto para operação 24/7 por faltar reconexão, supervisão e observabilidade.
 
 ### Observabilidade completa
 
@@ -118,8 +116,8 @@ Ainda não existe camada Meshtastic real.
 
 ## Divergências que exigem correção futura
 
-1. transport aceita wifi/bluetooth/usb como preparação para o runtime de produção, mas essas implementações ainda não existem.
-2. production é aceito pela configuração, mas ainda não há runtime de produção.
+1. transport aceita wifi/bluetooth/usb e possui adaptadores iniciais reais, mas ainda não há reconexão e supervisão.
+2. production já possui runtime inicial, mas ainda não é runtime de produção 24/7.
 4. channel_name e channel_index são carregados, mas ainda não controlam rádio.
 5. weather_provider é configurável, mas a composição atual instancia diretamente INMET.
 6. log_level é validado, mas não há inicialização central de logging.
