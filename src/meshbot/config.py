@@ -98,6 +98,7 @@ def _build_settings(raw: dict[str, Any]) -> Settings:
             transport=_required_string(raw, "transport"),
             channel_name=_required_string(raw, "channel_name"),
             channel_index=_required_int(raw, "channel_index"),
+            device=_optional_string(raw, "device", "") or None,
             admins=_required_admins(raw),
             database_path=_optional_string(raw, "database_path", "data/meshbot.db"),
             default_silence_minutes=_required_int(raw, "default_silence_minutes"),
