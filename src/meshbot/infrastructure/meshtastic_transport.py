@@ -91,19 +91,20 @@ class MeshtasticTransport:
         self._start_reconnect()
 
     def _start_reconnect(self) -> None:
-        if self._closed:
+        if self._closed or not self._reconnect_lock.acquire(blocking=False):
             return
-        if not self._reconnect_lock.acquire(blocking=False):
-            return
-        self._reconnect_lock.release()
-        Thread(
-            target=self._reconnect_loop,
-            name="MeshBotMeshtasticReconnect",
-            daemon=True,
-        ).start()
+        try:
+            Thread(
+                target=self._reconnect_loop,
+                name="MeshBotMeshtasticReconnect",
+                daemon=True,
+            ).start()
+        except Exception:
+            self._reconnect_lock.release()
+            raise
 
     def _reconnect_loop(self) -> None:
-        with self._reconnect_lock:
+        try:
             delay = self._reconnect_initial_delay
             while not self._closed and not self._connected:
                 if self._reconnect_stop.wait(delay):
@@ -113,9 +114,15 @@ class MeshtasticTransport:
                     close = getattr(old_interface, "close", None)
                     if close is not None:
                         close()
-                    self._interface = self._create_interface(
+                    new_interface = self._create_interface(
                         self._transport, self._device, self._interface_factory
                     )
+                    if self._closed:
+                        close = getattr(new_interface, "close", None)
+                        if close is not None:
+                            close()
+                        return
+                    self._interface = new_interface
                 except Exception:
                     delay = min(delay * 2, self._reconnect_max_delay)
                     continue
@@ -124,6 +131,8 @@ class MeshtasticTransport:
                 if self._reconnected.wait(self._reconnect_max_delay):
                     return
                 delay = min(delay * 2, self._reconnect_max_delay)
+        finally:
+            self._reconnect_lock.release()
 
     def _on_text(self, packet: dict[str, Any], **_: Any) -> None:
         decoded = packet.get("decoded")
