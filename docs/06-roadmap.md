@@ -2,203 +2,250 @@
 
 ## Visão
 
-O MeshBot deve evoluir de um núcleo testável com simulador para um serviço Meshtastic operacional sem perder simplicidade e testabilidade.
+O MeshBot deve evoluir de um núcleo testável para um serviço Meshtastic confiável, mantendo simplicidade, contratos claros e testes sem hardware.
 
 A ordem importa.
 
-## P0 — fundação
+## Estado de referência
+
+No estado atual:
+
+- núcleo de mensagens: implementado;
+- usuários/autorização/moderação: implementados;
+- tempo: implementado;
+- Defesa Civil sob demanda: implementada;
+- boletim automático: implementado;
+- gateway automático de Defesa Civil: implementação funcional inicial concluída;
+- transporte Meshtastic USB/Wi-Fi/Bluetooth: implementado;
+- reconexão: implementada;
+- runtime de produção: implementado;
+- TUI do simulador: implementada e estabilizada;
+- validação física com hardware: pendente.
+
+## P0 — alinhamento da base
 
 ### Documentação
+**Estado: em atualização nesta revisão.**
 
-**Estado: iniciado.**
+A documentação deve descrever o código real e separar claramente capacidade existente de trabalho futuro.
 
-Arquitetura, contratos, operação, qualidade e roadmap agora possuem registro técnico.
+### Configuração
+**Estado: parcialmente alinhada.**
 
-### Alinhar configuração e realidade
+Ainda existem pontos a corrigir:
 
-Obrigatório:
+- separar timeout da Defesa Civil do timeout de tempo;
+- decidir o papel real de `environment`;
+- remover ou implementar o efeito de `channel_name`;
+- transformar `weather.provider` em composição real ou deixar claro que INMET é único;
+- manter as features e suas dependências alinhadas.
 
-- remover opções sem efeito ou implementá-las;
-- separar timeout da Defesa Civil;
-- definir composição de production;
-- definir transport;
-- aplicar log_level.
+Critério: nenhuma opção deve sugerir uma capacidade inexistente.
 
-Critério: nenhuma configuração deve prometer capacidade inexistente.
+## P1 — validação do rádio real
 
-## P1 — transporte Meshtastic
+**Estado: código implementado; validação física pendente.**
 
-**Estado: implementado; validação de hardware real pendente.**
+Com hardware Meshtastic, validar:
 
-Criar MeshtasticTransport atrás de MessageTransport.
-
-Responsabilidades:
-
-- conexão;
-- recepção;
-- envio;
-- identificação do remetente;
-- canal;
-- reconexão;
-- erro;
-- shutdown.
-
-O restante do sistema não deve saber se o transporte usa USB, Bluetooth ou Wi-Fi.
+1. USB;
+2. Wi-Fi;
+3. Bluetooth, se fizer parte da instalação;
+4. conexão inicial;
+5. identificação;
+6. recepção;
+7. envio;
+8. `channel_index`;
+9. perda de conexão;
+10. reconexão;
+11. shutdown.
 
 ### Aceite
 
-O mesmo conjunto de comandos usado no simulador deve funcionar com o transporte real sem alteração dos casos de uso.
+O mesmo conjunto de casos de uso usado no simulador deve funcionar sem alteração da lógica de comandos.
+
+Esse é o próximo grande marco do projeto.
 
 ## P1 — runtime de produção
 
-**Estado: implementado.**
+**Estado: implementação inicial concluída; validação operacional pendente.**
 
-Composição explícita:
+Já existe:
 
-~~~text
-development -> SimulatorTransport
-production  -> MeshtasticTransport
-~~~
+- `ProductionRuntime`;
+- workers;
+- shutdown;
+- fechamento do transporte;
+- reação a falha de worker;
+- exemplo systemd.
 
-O runtime de produção não deve depender da CLI de desenvolvimento.
+Depois do hardware, validar comportamento contínuo real.
 
 ## P1 — observabilidade
 
-**Estado: implementado.**
+**Estado: base implementada; refinamento pendente.**
 
-Implementar:
+Já existe:
 
 - logging central;
 - nível configurável;
-- conexão;
-- mensagens;
-- falhas externas;
-- contadores básicos.
+- eventos de conexão;
+- falhas de transporte;
+- contadores em memória;
+- logs de processamento.
 
-O operador deve saber se o processo está vivo, conectado, recebendo, enviando e falhando.
+Futuro:
 
-## P2 — gateway Defesa Civil
+- health/status;
+- métricas externas;
+- diagnóstico de estado do transporte;
+- eventualmente retenção/rotação de logs conforme a instalação.
 
-**Estado: implementação funcional concluída; refinamentos operacionais futuros.**
+## P2 — Defesa Civil
 
-Depois do transporte real:
+**Estado: funcional inicial implementado; refinamentos pendentes.**
+
+Manter:
 
 - feed contínuo;
 - estado persistente;
-- deduplicação;
 - update;
 - cancel;
-- expiração;
-- geometria;
-- localização;
-- fragmentação;
-- transmissão automática.
+- deactivated;
+- transmissão automática;
+- fragmentação segura.
 
-Essa função deve ser separada da consulta !defesacivil.
+Evoluir para:
+
+- timeout próprio;
+- geometria CAP;
+- localização;
+- retenção;
+- outbox transacional;
+- confirmação/recuperação de envio.
+
+A consulta `!defesacivil` continua separada do gateway.
 
 ## P2 — localização
 
-Criar LocationProvider com implementações manual e GPS futura.
+Criar, somente quando necessário:
 
-Criar componente de geometria CAP.
+- `LocationProvider`;
+- implementação manual;
+- implementação GPS futura;
+- representação explícita de latitude/longitude.
+
+Depois, integrar com geometria CAP.
+
+## P2 — geometria CAP
+
+Substituir ou complementar o filtro textual por:
+
+```text
+localização do gateway
+        +
+polígono CAP
+        ↓
+point-in-polygon
+        ↓
+alerta relevante?
+```
+
+O município textual pode continuar como fallback, mas não deve ser confundido com precisão geográfica.
 
 ## P2 — estado de alertas
 
-Criar armazenamento próprio para alertas.
+A base já existe.
 
-Não usar a tabela users para isso.
+Futuro:
+
+- assinatura/hash do conteúdo;
+- timestamps operacionais;
+- estado de transmissão;
+- retenção;
+- outbox;
+- recuperação após reinício.
 
 ## P3 — robustez
 
-**Estado: camada operacional principal implementada; evolução contínua.**
+Prioridades futuras:
 
-Depois das funções centrais:
-
-- retry com backoff;
 - health check;
 - watchdog;
-- shutdown;
 - métricas;
 - retenção de logs;
 - limites de memória;
 - prevenção de loops;
-- documentação Linux.
+- recuperação de falhas de envio;
+- documentação operacional Linux.
+
+Retry com backoff, shutdown e supervisão básica já existem e não devem ser recriados.
 
 ## P3 — segurança
 
-**Estado: controles básicos implementados; endurecimento contínuo.**
+Controles básicos já existem:
 
-Reforçar:
+- autorização;
+- papéis;
+- moderação;
+- validação de nome;
+- limites de resposta;
+- tratamento seguro de erros.
 
-- validação de origem;
-- limites;
+Evolução:
+
 - rate limiting;
-- spam;
+- proteção contra spam;
 - auditoria administrativa;
-- política de segredos;
-- erros seguros.
+- política explícita de segredos;
+- validação adicional de origem;
+- limites operacionais.
 
 ## O que não deve entrar cedo
 
-Não priorizar painel web, banco remoto, microserviços, filas externas, Kubernetes ou IA para resumir alertas oficiais.
+Não priorizar:
 
-Primeiro o projeto precisa operar uma rede Meshtastic de forma confiável.
+- painel web;
+- banco remoto;
+- microserviços;
+- filas externas;
+- Kubernetes;
+- IA para resumir alertas oficiais;
+- nova rodada de polimento visual da TUI sem problema concreto.
 
-## Regra de liderança
+Primeiro: rádio real funcionando de forma confiável.
 
-Toda mudança futura deve declarar:
+## Regra de decisão
 
-- problema;
-- decisão;
-- impacto;
-- teste;
-- risco;
-- próximo passo.
+Toda mudança futura deve responder:
 
-Nenhuma feature entra apenas porque seria legal.
+1. Qual problema resolve?
+2. Qual decisão foi tomada?
+3. Qual impacto tem?
+4. Como será testada?
+5. Qual o risco?
+6. Qual é o próximo passo?
+
+Nenhuma feature entra apenas porque parece interessante.
 
 ## Definition of Done
 
-Uma feature só está concluída quando código, testes, erros, configuração, logs e documentação estiverem alinhados.
+Uma mudança só está concluída quando código, testes, erros, configuração, logs e documentação estão alinhados.
 
-## Marcos
+## Próxima sequência prática
 
-### Marco A — núcleo funcional
+A ordem recomendada a partir deste documento é:
 
-**Atingido.**
+```text
+1. validar localmente a última mudança do simulador;
+2. encerrar a fase de TUI;
+3. preparar/confirmar o hardware Meshtastic;
+4. validar conexão e mensagens reais;
+5. validar reconexão;
+6. validar runtime contínuo;
+7. corrigir divergências de configuração;
+8. então refinar Defesa Civil/geometria/localização/outbox;
+9. depois endurecer operação e segurança.
+```
 
-Usuários, autorização, moderação, tempo, Defesa Civil sob demanda e simulador funcionam.
-
-### Marco B — fundação documental
-
-**Iniciado.**
-
-Este conjunto formaliza o estado e as lacunas.
-
-### Marco C — rádio real
-
-**Implementação concluída; validação física pendente.**
-
-O transporte Meshtastic já suporta USB, Wi-Fi e Bluetooth, incluindo recepção, envio, conexão, reconexão, tratamento de falhas e shutdown. A cobertura unitária é feita com interfaces simuladas; a única etapa dependente de hardware é a validação física da instalação.
-
-### Marco D — gateway Defesa Civil
-
-**Concluído na camada funcional.**
-
-A primeira camada persistente já está definida: alertas possuem armazenamento próprio, atualização por identificador e estado ativo/inativo. O sincronizador recebe um snapshot efetivo do feed e desativa alertas que deixaram de existir nele.
-
-O consumo contínuo, estado persistente, deduplicação, atualização/cancelamento, expiração e transmissão automática já estão implementados. Ainda faltam refinamentos de geometria CAP, fragmentação específica para mensagens longas e uma outbox transacional para garantir recuperação de falhas de envio sem perda de evento.
-
-### Marco E — operação contínua
-
-**Implementação inicial concluída.**
-
-Supervisão de workers, retry com backoff, shutdown limpo, logging e exemplo de serviço systemd estão implementados. A outbox transacional, métricas externas e health endpoint permanecem refinamentos opcionais.
-
-## Regra final
-
-O projeto não deve correr para parecer grande.
-
-Ele deve crescer em camadas, com contratos claros, testes reais e responsabilidade operacional.
-
-A ambição é grande; a implementação deve ser disciplinada.
+A etapa 1 não exige nova arquitetura. A etapa 4 é a primeira que depende de hardware real.
