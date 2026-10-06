@@ -4,7 +4,6 @@ from pathlib import Path
 
 from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.bot import MeshBot
-from meshbot.application.runtime import ProductionRuntime
 from meshbot.application.commands import (
     BlockCommand,
     CommandHandler,
@@ -18,6 +17,7 @@ from meshbot.application.commands import (
 )
 from meshbot.application.moderation import ModerationService
 from meshbot.application.moderation_notifications import ModerationNotifier
+from meshbot.application.runtime import ProductionRuntime
 from meshbot.application.users import UserService
 from meshbot.config import ConfigurationError, load_settings
 from meshbot.domain.messages import OutgoingMessage
