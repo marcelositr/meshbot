@@ -1,112 +1,122 @@
-# Qualidade, testes e critérios de aceite
+# Qualidade, testes e critérios de conclusão
 
-## Padrão mínimo
+## Ferramentas
 
-Toda alteração relevante deve passar por:
+O projeto usa:
 
-~~~text
-pytest
-ruff check .
-mypy
-~~~
+- pytest;
+- Ruff;
+- mypy strict.
 
-O projeto usa mypy strict e Ruff com regras de erros, imports, bugs comuns, modernização e simplificação.
+Configuração relevante:
 
-## Pirâmide
+- Python 3.13;
+- Ruff target `py313`;
+- linha máxima de 100 caracteres;
+- regras Ruff `E,F,I,B,UP,SIM`;
+- mypy strict.
 
-### Unitários
+## Estrutura de testes
 
-Devem cobrir domínio, autorização, comandos, configuração, parsing, formatação e políticas.
+A suíte cobre unidade e integração.
 
-### Integração
+Áreas presentes:
 
-Devem cobrir bot + transporte, autorização + usuários, SQLite, comandos + fakes e fluxos do simulador.
+- configuração;
+- usuários;
+- serviço de usuários;
+- autorização;
+- bot;
+- comandos;
+- moderação;
+- notificações;
+- runtime;
+- observabilidade;
+- tempo/INMET;
+- boletim automático;
+- Defesa Civil;
+- estado de alertas;
+- polling;
+- delivery/fragmentação;
+- gateway automático;
+- transporte Meshtastic;
+- simulador.
 
-### Hardware
+## Testes de infraestrutura
 
-Quando o transporte real existir, testes de hardware ficam separados dos testes determinísticos.
+O transporte Meshtastic é testado com interfaces e eventos simulados, sem exigir rádio físico.
 
-Nenhum teste unitário depende de rádio conectado.
+Isso permite validar:
 
-## Rede externa
-
-Testes contra IBGE, INMET e CAP podem existir como ferramentas manuais, mas a suíte automatizada deve usar respostas controladas.
-
-## Casos obrigatórios
-
-Toda nova funcionalidade deve testar:
-
-- caminho normal;
-- entrada inválida;
-- recurso ausente;
-- erro externo;
-- limite;
-- autorização quando aplicável;
-- persistência quando aplicável.
-
-## Defesa Civil
-
-A suíte deve manter cobertura para Alert, Update, Cancel, referências, Actual, Public, expiração, múltiplos info, múltiplos alertas, ausência de alerta, cidade inválida, cidade ambígua, erro do feed e fragmentação.
-
-Para o gateway futuro:
-
-- deduplicação;
-- alteração de conteúdo;
-- update que deixa a área;
-- cancelamento;
-- expiração;
-- múltiplos polígonos;
-- point-in-polygon;
-- retenção.
-
-## Usuários e moderação
-
-Cobrir cadastro, duplicidade, nomes Unicode, acentos, espaços, limite, caracteres proibidos, bloqueio, desbloqueio, silenciamento, expiração, admin/admin, persistência e notificações.
-
-## Transporte futuro
-
-Antes de produção:
-
-- conexão;
+- criação de interface;
+- recebimento;
 - envio;
-- recepção;
+- conexão;
 - perda de conexão;
 - reconexão;
-- mensagem inválida;
-- limite;
-- shutdown;
-- dispositivo ausente.
+- fechamento.
+
+O teste físico continua separado da suíte automatizada.
+
+## Critério de uma mudança
+
+Uma mudança relevante deve, quando aplicável:
+
+1. ter comportamento definido;
+2. possuir teste;
+3. manter Ruff limpo;
+4. manter mypy limpo;
+5. alinhar configuração;
+6. alinhar logs;
+7. alinhar documentação;
+8. registrar limitações conhecidas.
 
 ## Definition of Done
 
-Uma mudança só está pronta quando:
+Uma funcionalidade só deve ser considerada concluída quando:
 
-- comportamento implementado;
-- dependências isoladas;
-- testes existentes;
-- erros definidos;
-- configuração validada;
-- logs suficientes;
-- documentação atualizada;
-- sem opções mortas;
-- simulador sem regressão;
-- decisão arquitetural registrada quando necessária.
+- código está implementado;
+- caminhos de erro estão tratados;
+- testes cobrem o comportamento relevante;
+- configuração representa o comportamento real;
+- logs são suficientes para diagnóstico;
+- documentação não promete algo inexistente.
 
-## Validação final
+## Validação local
 
-Antes de uma versão operacional:
+Fluxo recomendado:
 
-1. suíte completa;
-2. Ruff;
-3. mypy;
-4. simulador limpo;
-5. cadastro;
-6. nome;
-7. autorização;
-8. moderação;
-9. tempo;
-10. Defesa Civil;
-11. falha externa;
-12. banco novo;
-13. migração;
-14. somente então hardware.
+```bash
+pytest -q
+ruff check .
+mypy
+```
+
+Para a TUI:
+
+```bash
+python3 -m meshbot
+```
+
+Esse último comando é interativo e permanece em execução até o usuário sair.
+
+## Hardware
+
+O hardware real não deve ser simulado na suíte unitária.
+
+O aceite do transporte Meshtastic precisa incluir teste físico de:
+
+- conexão inicial;
+- identificação;
+- recepção;
+- envio;
+- canal;
+- perda de conexão;
+- reconexão;
+- shutdown.
+
+## Regra de estabilidade
+
+Não alterar código somente para aumentar cobertura numérica.
+
+O objetivo é cobrir contratos e falhas relevantes, mantendo o projeto simples.
