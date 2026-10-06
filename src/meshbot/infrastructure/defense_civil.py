@@ -69,7 +69,6 @@ class DefenseCivilAlertService:
             status = self._find_text(alert_element, "status")
             msg_type = self._find_text(alert_element, "msgType")
             scope = self._find_text(alert_element, "scope")
-            scope = self._find_text(alert_element, "scope")
             references_text = self._find_text(
                 alert_element,
                 "references",
@@ -225,8 +224,8 @@ class DefenseCivilAlertService:
         *,
         required: bool = True,
     ) -> str | None:
-        for child in parent:
-            if cls._local_name(child.tag) != name:
+        for child in parent.iter():
+            if child is parent or cls._local_name(child.tag) != name:
                 continue
             text = "".join(child.itertext()).strip()
             if text:
