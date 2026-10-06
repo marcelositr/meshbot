@@ -63,6 +63,7 @@ def main() -> None:
     )
     moderation_notifier = ModerationNotifier(user_repository)
 
+    transport: SimulatorTransport | MeshtasticTransport
     if settings.transport == "simulator":
         transport = SimulatorTransport(on_send=display_message)
     else:
@@ -107,9 +108,11 @@ def main() -> None:
         print("Exemplos: !12345678 !ping  |  !12345678 !tempo Ituverava/SP")
         print("          !12345678 !defesacivil Ituverava/SP")
         print("Digite 'exit' para sair.")
+        assert isinstance(transport, SimulatorTransport)
         _run_simulator(transport, bot)
         return
 
+    assert isinstance(transport, MeshtasticTransport)
     print(f"{settings.name} - Meshtastic ({settings.transport})")
     try:
         while True:
