@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import curses
 import logging
+from contextlib import suppress
 import queue
 from collections import deque
 from collections.abc import Callable
@@ -332,10 +333,8 @@ class SimulatorChatUI:
         height, width = screen.getmaxyx()
         if y < 0 or y >= height or x >= width:
             return
-        try:
+        with suppress(curses.error):
             screen.addnstr(y, max(0, x), text, max(0, width - max(0, x) - 1), attributes)
-        except curses.error:
-            pass
 
 
 def run_simulator_chat(
