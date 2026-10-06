@@ -125,6 +125,7 @@ class MeshtasticTransport:
                 if self._reconnect_stop.wait(delay):
                     return
                 try:
+                    self._reconnected.clear()
                     old_interface = self._interface
                     close = getattr(old_interface, "close", None)
                     if close is not None:
@@ -147,7 +148,6 @@ class MeshtasticTransport:
                     delay = min(delay * 2, self._reconnect_max_delay)
                     continue
 
-                self._reconnected.clear()
                 if self._reconnected.wait(self._reconnect_max_delay):
                     logger.info("Meshtastic reconnection completed.")
                     return
