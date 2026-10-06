@@ -1,6 +1,7 @@
 """Tests for operational observability."""
 
 import logging
+from contextlib import suppress
 
 from meshbot.application.bot import BotStats, MeshBot
 from meshbot.application.logging import configure_logging
@@ -45,10 +46,8 @@ def test_bot_counts_failures_and_logs_exception(caplog) -> None:
     bot = MeshBot(transport, FailingCommands())
 
     with caplog.at_level(logging.ERROR):
-        try:
+        with suppress(RuntimeError):
             bot.process_next_message()
-        except RuntimeError:
-            pass
 
     assert bot.stats.failures == 1
     assert "Failed to process message from !1." in caplog.text
