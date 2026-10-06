@@ -98,7 +98,7 @@ def _build_settings(raw: dict[str, Any]) -> Settings:
             transport=_required_string(raw, "transport"),
             channel_name=_required_string(raw, "channel_name"),
             channel_index=_required_int(raw, "channel_index"),
-            device=_optional_string(raw, "device", "") or None,
+            device=_optional_nullable_string(raw, "device"),
             admins=_required_admins(raw),
             database_path=_optional_string(raw, "database_path", "data/meshbot.db"),
             default_silence_minutes=_required_int(raw, "default_silence_minutes"),
@@ -234,6 +234,16 @@ def _optional_string(raw: dict[str, Any], key: str, default: str) -> str:
     if not isinstance(value, str) or not value.strip():
         raise ConfigurationError(f"{key} must be a non-empty string.")
     return value.strip()
+
+
+def _optional_nullable_string(raw: dict[str, Any], key: str) -> str | None:
+    value = raw.get(key)
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ConfigurationError(f"{key} must be a string.")
+    value = value.strip()
+    return value or None
 
 
 def _optional_int(raw: dict[str, Any], key: str, default: int) -> int:
