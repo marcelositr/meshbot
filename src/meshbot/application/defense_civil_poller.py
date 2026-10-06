@@ -8,7 +8,10 @@ from threading import Event
 from typing import Protocol
 
 from meshbot.application.defense_civil import DefenseCivilAlert
-from meshbot.application.defense_civil_state import DefenseCivilStateService
+from meshbot.application.defense_civil_state import (
+    DefenseCivilAlertEvent,
+    DefenseCivilStateService,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -39,12 +42,16 @@ class DefenseCivilPoller:
         self._poll_interval_seconds = poll_interval_seconds
         self._sleep = sleep or Event().wait
 
-    def poll_once(self) -> tuple[DefenseCivilAlert, ...]:
+    def poll_once(self) -> tuple[DefenseCivilAlertEvent, ...]:
         """Fetch and persist one successful feed snapshot."""
         alerts = self._feed.get_all_alerts()
-        self._state.synchronize(alerts)
-        logger.info("Defense Civil feed synchronized: %d active alerts.", len(alerts))
-        return alerts
+        events = self._state.synchronize(alerts)
+        logger.info(
+            "Defense Civil feed synchronized: %d active alerts, %d lifecycle events.",
+            len(alerts),
+            len(events),
+        )
+        return events
 
     def run(self, stop_event: Event | None = None) -> None:
         """Poll until stopped; failed polls leave the previous state untouched."""
