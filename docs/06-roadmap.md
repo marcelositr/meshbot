@@ -32,15 +32,15 @@ A documentação deve descrever o código real e separar claramente capacidade e
 ### Configuração
 **Estado: parcialmente alinhada.**
 
-Ainda existem pontos a corrigir:
+Os pontos de configuração desta etapa estão concluídos:
 
-- separar timeout da Defesa Civil do timeout de tempo;
-- decidir o papel real de `environment`;
-- remover ou implementar o efeito de `channel_name`;
-- transformar `weather.provider` em composição real ou deixar claro que INMET é único;
-- manter as features e suas dependências alinhadas.
+- timeout da Defesa Civil separado do timeout de tempo;
+- `environment` removido por não ter responsabilidade própria;
+- `channel_name` removido por não controlar o rádio;
+- `weather.provider` participa da composição e, no momento, INMET é o único provider implementado;
+- features e suas dependências permanecem alinhadas.
 
-Critério: nenhuma opção deve sugerir uma capacidade inexistente.
+Critério atendido: nenhuma opção ativa sugere uma capacidade inexistente.
 
 ## P1 — validação do rádio real
 
@@ -239,11 +239,11 @@ A ordem recomendada a partir deste documento é:
 ```text
 1. validar localmente a última mudança do simulador;
 2. encerrar a fase de TUI;
-3. preparar/confirmar o hardware Meshtastic;
-4. validar conexão e mensagens reais;
-5. validar reconexão;
-6. validar runtime contínuo;
-7. corrigir divergências de configuração;
+3. validar a configuração e a composição já alinhadas;
+4. preparar/confirmar o hardware Meshtastic;
+5. validar conexão e mensagens reais;
+6. validar reconexão;
+7. validar runtime contínuo;
 8. então refinar Defesa Civil/geometria/localização/outbox;
 9. depois endurecer operação e segurança.
 ```
