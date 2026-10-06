@@ -1,131 +1,278 @@
 # Estado atual
 
-## Resumo executivo
+## Resumo
 
-O MeshBot possui um núcleo de aplicação funcional, mas ainda não é um gateway Meshtastic de produção.
+O MeshBot deixou de ser apenas um protótipo de simulador. O código atual já possui um transporte Meshtastic real para USB, Wi-Fi e Bluetooth, reconexão, runtime de produção, serviços externos de tempo e Defesa Civil, persistência de usuários e de alertas, trabalhadores automáticos e uma TUI de simulador.
 
-Hoje o fluxo completo entrada -> autorização -> comando -> serviço -> resposta funciona com o simulador. Usuários e moderação possuem persistência SQLite. Tempo e Defesa Civil possuem integrações externas reais.
+O que ainda não pode ser declarado concluído é a **validação física com hardware Meshtastic** e alguns refinamentos operacionais.
 
-A principal lacuna estrutural agora está no ciclo de vida operacional: os adaptadores Meshtastic já existem e recebem/enviam mensagens, mas ainda falta reconexão, supervisão e observabilidade de produção.
+## Núcleo de mensagens
 
-## O que existe
+O domínio possui somente os objetos necessários para transportar mensagens:
 
-### Núcleo
+- `IncomingMessage(sender_id, text)`;
+- `OutgoingMessage(recipient_id, text)`.
 
-- IncomingMessage e OutgoingMessage.
-- MessageTransport como contrato.
-- MeshBot como orquestrador.
-- CommandHandler.
-- AuthorizationPolicy.
-- atraso entre mensagens.
+A aplicação conversa com transportes por `MessageTransport`, que expõe apenas `receive()` e `send()`.
 
-### Usuários
+## Usuários
 
-- node ID no formato ! + 8 hexadecimais;
-- cadastro pelo próprio usuário;
-- nome amigável;
-- normalização NFC;
-- espaços duplicados reduzidos;
-- letras Unicode e acentos;
-- dígitos;
-- preservação de caixa;
-- rejeição de pontuação, símbolos e emojis;
-- máximo de 24 caracteres;
-- papéis user e admin.
+O cadastro é persistido em SQLite.
 
-### Moderação
+Regras atuais:
 
-- bloquear;
-- desbloquear;
-- silenciar temporariamente;
-- duração padrão;
-- proteção admin contra admin;
+- node ID no formato `! + 8 caracteres hexadecimais`;
+- normalização do node ID para minúsculas;
+- nome padrão `Sem nome`;
+- nome máximo de 24 caracteres;
+- normalização Unicode NFC;
+- espaços duplicados são reduzidos;
+- letras Unicode, incluindo acentos, são aceitas;
+- dígitos são aceitos;
+- caixa original é preservada;
+- pontuação, símbolos e emojis são rejeitados;
+- papéis `user` e `admin`.
+
+Comandos básicos:
+
+- `!registrar`;
+- `!nome <nome>`.
+
+## Autorização
+
+Mensagens passam por `AuthorizationPolicy` quando a política é instalada no bot.
+
+- usuário inexistente: rejeitado, exceto `!registrar`;
+- usuário bloqueado: rejeitado;
+- usuário silenciado: rejeitado;
+- usuário autorizado: segue para o `CommandHandler`.
+
+Para um usuário não cadastrado, o bot envia uma instrução curta para usar `!registrar`.
+
+## Moderação
+
+Administradores podem:
+
+- `!bloquear <node_id>`;
+- `!desbloquear <node_id>`;
+- `!silenciar <node_id> [minutos]`.
+
+Um administrador não pode moderar outro administrador.
+
+As ações geram notificações diretas ao alvo e aos administradores cadastrados.
+
+## Comandos opcionais
+
+A configuração controla cinco capacidades opcionais:
+
+- `ping` → `!ping`;
+- `weather_command` → `!tempo <cidade>`;
+- `weather_bulletin` → boletim automático;
+- `defense_civil_command` → `!defesacivil <cidade>`;
+- `defense_civil_monitor` → monitoramento automático.
+
+Sem a tabela `[features]`, todas essas opções assumem `true`, preservando compatibilidade com configurações antigas.
+
+Os comandos básicos de cadastro, nome e moderação não possuem toggle e são sempre compostos.
+
+## Tempo
+
+O serviço atual é INMET e a resolução de municípios usa a API do IBGE.
+
+A consulta aceita:
+
+- nome da cidade;
+- `Cidade/UF`;
+- código no formato `ibge <código>`.
+
+A resolução ignora diferenças de caixa e acentuação. Cidade ambígua exige UF.
+
+O serviço mantém em memória a lista de municípios do IBGE depois da primeira consulta.
+
+A resposta de `!tempo` é composta por quatro mensagens:
+
+1. cidade e resumo;
+2. temperatura mínima/máxima;
+3. umidade mínima/máxima;
+4. vento.
+
+O intervalo entre respostas é aplicado pelo `MeshBot`.
+
+### Limitação de configuração
+
+`weather.provider` é validado, mas a composição atual instancia diretamente `InmetWeatherService`. Portanto, **INMET é o único provider efetivamente implementado**.
+
+## Boletim automático de tempo
+
+Existe `WeatherBulletinWorker`.
+
+Ele:
+
+- usa os horários configurados de manhã, tarde e noite;
+- publica no máximo uma vez por janela por dia;
+- consulta o serviço de tempo;
+- envia para o destino configurado;
+- registra falhas sem derrubar o processo.
+
+É ativado somente quando:
+
+- `features.weather_bulletin = true`;
+- `weather.automatic_enabled = true`;
+- local e destino estão configurados.
+
+## Defesa Civil
+
+A integração lê o feed CAP oficial e:
+
+- aceita alertas `Actual/Public`;
+- processa `Alert`, `Update` e `Cancel`;
+- resolve município via IBGE;
+- ignora alertas expirados;
+- remove alertas cancelados ou substituídos na composição do snapshot;
+- filtra a consulta por município/UF usando o texto de `areaDesc`;
+- expõe headline/evento, severidade e campos opcionais;
+- limita a quantidade exibida;
+- fragmenta mensagens longas.
+
+Não existe interpretação semântica do texto oficial.
+
+### Consulta sob demanda
+
+`!defesacivil <cidade>` pode responder em três modos:
+
+- `normal`;
+- `attention`;
+- `emergency`.
+
+O modo define quais campos são mostrados por padrão. Os `show_*` permitem ajuste fino.
+
+### Gateway automático
+
+O projeto já possui:
+
+- `DefenseCivilPoller`;
+- estado persistente SQLite;
+- sincronização por snapshot;
+- eventos `new`, `updated` e `deactivated`;
+- deduplicação por estado/identificador;
+- retry com backoff;
+- formatter compacto;
+- filtragem textual de localização;
+- transmissão automática para o destino configurado.
+
+O evento `deactivated` não gera transmissão.
+
+### Limitações atuais
+
+Ainda não existem:
+
+- geometria CAP com point-in-polygon;
+- localização por GPS;
+- outbox transacional de envio;
+- política de retenção configurável para alertas;
+- confirmação persistente de entrega;
+- mecanismo transacional que garanta que um evento persistido será reenviado após uma falha de transmissão.
+
+Além disso, o timeout usado na composição da Defesa Civil atualmente vem de `weather_timeout_seconds`; isso deve ser separado antes de considerar a configuração completamente alinhada.
+
+## Transporte Meshtastic
+
+`MeshtasticTransport` implementa o contrato de transporte para:
+
+- USB;
+- Wi-Fi;
+- Bluetooth.
+
+Ele:
+
+- cria a interface apropriada da biblioteca Meshtastic;
+- assina eventos de conexão, perda de conexão e texto recebido;
+- coloca mensagens recebidas em uma fila em memória;
+- envia texto usando `channel_index`;
+- informa estado conectado/desconectado;
+- fecha a interface no shutdown;
+- recria a interface após perda de conexão;
+- usa backoff de reconexão limitado.
+
+A validação atual é unitária, com interfaces simuladas. **Ainda falta teste físico com o hardware que será usado na instalação.**
+
+### Limitações conhecidas
+
+- `channel_name` é carregado na configuração, mas o transporte usa efetivamente `channel_index`.
+- Não há descoberta automática de hardware.
+- Não há health endpoint.
+- A fila de entrada do transporte não possui limite explícito.
+- A seleção de provider de transporte é simples e fica na composição da CLI.
+
+## Runtime
+
+`ProductionRuntime`:
+
+- inicia workers em threads;
+- chama `process_next_message()` continuamente;
+- encerra quando o stop event é acionado;
+- encerra workers;
+- fecha o transporte;
+- registra início e fim;
+- transforma falha de worker em solicitação de shutdown.
+
+O runtime é reutilizável e não conhece comandos específicos.
+
+## Simulador e TUI
+
+O simulador usa `SimulatorTransport` em memória.
+
+A TUI em curses oferece:
+
+- histórico de chat;
+- timestamp;
+- cores por tipo;
+- entrada no rodapé;
+- identificação clara do destino;
+- `MeshBot → TODOS` para broadcast;
+- `MeshBot → <node>` para destinatário específico;
+- processamento do bot fora da thread de desenho.
+
+O atraso configurado entre respostas é preservado porque o processamento ocorre em thread própria e continua usando o atraso interno do `MeshBot`.
+
+A TUI não deve receber novas alterações de UX agora sem uma necessidade concreta.
+
+## Observabilidade
+
+Existe logging centralizado e contadores básicos:
+
+- `received`;
+- `processed`;
+- `sent`;
+- `rejected`;
+- `failures`.
+
+O nível é configurável por `log_level`.
+
+Ainda faltam mecanismos externos de health/status e métricas persistentes.
+
+## Qualidade atual
+
+A suíte automatizada cobre unidade e integração, incluindo:
+
+- configuração;
+- comandos;
+- usuários;
+- autorização;
+- moderação;
 - notificações;
-- nomes amigáveis nas notificações.
+- runtime;
+- observabilidade;
+- transporte Meshtastic;
+- tempo;
+- boletim automático;
+- Defesa Civil;
+- simulador.
 
-### Persistência
-
-SQLite local com users contendo node_id, name, role, blocked e silenced_until.
-
-Existe migração simples para bases antigas que não possuíam name.
-
-### Tempo
-
-- resolução de municípios pelo IBGE;
-- Cidade e Cidade/UF;
-- ambiguidade;
-- INMET;
-- períodos manhã/tarde/noite;
-- consulta por código IBGE;
-- cache em memória da lista de municípios.
-
-### Defesa Civil
-
-- feed oficial CAP;
-- parsing XML;
-- Actual + Public;
-- Alert, Update e Cancel;
-- referências;
-- expiração;
-- filtragem textual por município/UF;
-- consulta sob demanda;
-- limite de alertas;
-- fragmentação;
-- modos normal, attention e emergency;
-- campos configuráveis.
-
-A consulta é deliberadamente independente entre requisições. O sistema atual não mantém histórico de alertas.
-
-### Desenvolvimento
-
-- simulador local;
-- pytest;
-- Ruff;
-- mypy strict;
-- Python >= 3.13.
-
-## O que ainda não existe
-
-### Transporte Meshtastic real
-
-Existem adaptadores concretos para Wi-Fi, Bluetooth e USB, com recepção, envio, seleção por `channel_index`, dispositivo opcional e acompanhamento dos eventos de conexão. Ainda faltam reconexão, descoberta de dispositivo e supervisão operacional.
-
-### Execução de produção
-
-environment=production já seleciona o transporte Meshtastic na CLI. Ainda não é considerado pronto para operação 24/7 por faltar reconexão, supervisão e observabilidade.
-
-### Observabilidade completa
-
-Existe logging pontual, porém falta inicialização central por log_level, correlação, métricas, contadores, diagnóstico de transporte e eventos estruturados.
-
-### Defesa Civil event-driven
-
-A consulta atual é sob demanda. O gateway de referência é contínuo e orientado a eventos.
-
-### Geolocalização por polígono
-
-O MeshBot atual usa areaDesc textual. O gateway de referência usa polígonos CAP e point-in-polygon.
-
-### Estado persistente de alertas
-
-Ainda não há armazenamento de último alerta, assinatura, atualização, cancelamento ou retenção.
-
-### Integração com hardware
-
-Ainda não existe camada Meshtastic real.
-
-## Divergências que exigem correção futura
-
-1. transport aceita wifi/bluetooth/usb e possui adaptadores iniciais reais, mas ainda não há reconexão e supervisão.
-2. production já possui runtime inicial, mas ainda não é runtime de produção 24/7.
-4. channel_name e channel_index são carregados, mas ainda não controlam rádio.
-5. weather_provider é configurável, mas a composição atual instancia diretamente INMET.
-6. log_level é validado, mas não há inicialização central de logging.
-7. Defesa Civil usa weather_timeout_seconds na composição da CLI; o timeout deve ser próprio.
-8. A documentação distingue agora os transportes de produção planejados dos transportes atualmente disponíveis.
+O estado conhecido antes desta revisão era de testes, Ruff e mypy passando; a última alteração ainda precisa ser validada localmente pelo usuário.
 
 ## Conclusão
 
-O núcleo não deve ser refeito.
+O núcleo e as principais integrações já estão implementados. O projeto não precisa de uma reescrita arquitetural.
 
-A prioridade é fechar as fronteiras já criadas e transformar declarações futuras em capacidades reais, sem perder a testabilidade atual.
+O próximo marco importante é validar o transporte real com hardware. Depois disso, os refinamentos devem seguir o roadmap abaixo, sem voltar a expandir a TUI ou introduzir abstrações desnecessárias.
