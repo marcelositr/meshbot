@@ -171,9 +171,11 @@ Primeiro grande salto operacional.
 
 ### Marco D — gateway Defesa Civil
 
-**Futuro.**
+**Em implementação.**
 
-Transformar processamento sob demanda em evento persistente e confiável.
+A primeira camada persistente já está definida: alertas possuem armazenamento próprio, atualização por identificador e estado ativo/inativo. O sincronizador recebe um snapshot efetivo do feed e desativa alertas que deixaram de existir nele.
+
+Ainda faltam o consumo contínuo do feed, localização por geometria, fragmentação e transmissão automática.
 
 ### Marco E — operação contínua
 
