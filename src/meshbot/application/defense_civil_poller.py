@@ -15,6 +15,9 @@ from meshbot.application.defense_civil_state import (
 
 logger = logging.getLogger(__name__)
 
+_RETRY_INITIAL_DELAY_SECONDS = 5.0
+_RETRY_MAX_DELAY_SECONDS = 60.0
+
 
 class DefenseCivilFeed(Protocol):
     """Source of current effective Defense Civil alerts."""
@@ -34,15 +37,26 @@ class DefenseCivilPoller:
         poll_interval_seconds: float = 300.0,
         sleep: Callable[[float], None] | None = None,
         on_events: Callable[[DefenseCivilAlertEvent], None] | None = None,
+        retry_initial_delay_seconds: float = _RETRY_INITIAL_DELAY_SECONDS,
+        retry_max_delay_seconds: float = _RETRY_MAX_DELAY_SECONDS,
     ) -> None:
         if poll_interval_seconds <= 0:
             raise ValueError("poll_interval_seconds must be greater than zero.")
+        if retry_initial_delay_seconds <= 0:
+            raise ValueError("retry_initial_delay_seconds must be greater than zero.")
+        if retry_max_delay_seconds < retry_initial_delay_seconds:
+            raise ValueError(
+                "retry_max_delay_seconds must be greater than or equal to "
+                "retry_initial_delay_seconds."
+            )
 
         self._feed = feed
         self._state = state
         self._poll_interval_seconds = poll_interval_seconds
         self._sleep = sleep or Event().wait
         self._on_events = on_events
+        self._retry_initial_delay_seconds = retry_initial_delay_seconds
+        self._retry_max_delay_seconds = retry_max_delay_seconds
 
     def poll_once(self) -> tuple[DefenseCivilAlertEvent, ...]:
         """Fetch and persist one successful feed snapshot."""
@@ -59,14 +73,28 @@ class DefenseCivilPoller:
         return events
 
     def run(self, stop_event: Event | None = None) -> None:
-        """Poll until stopped; failed polls leave the previous state untouched."""
+        """Poll until stopped, retrying failed feeds with bounded backoff."""
         event = stop_event or Event()
+        retry_delay = self._retry_initial_delay_seconds
         logger.info("Defense Civil poller started.")
         while not event.is_set():
             try:
                 self.poll_once()
+                retry_delay = self._retry_initial_delay_seconds
+                self._sleep_until(event, self._poll_interval_seconds)
             except Exception:
-                logger.exception("Defense Civil feed synchronization failed.")
-            if not event.is_set():
-                self._sleep(self._poll_interval_seconds)
+                logger.exception(
+                    "Defense Civil feed synchronization failed; retrying in %.1fs.",
+                    retry_delay,
+                )
+                self._sleep_until(event, retry_delay)
+                retry_delay = min(
+                    retry_delay * 2,
+                    self._retry_max_delay_seconds,
+                )
         logger.info("Defense Civil poller stopped.")
+
+    def _sleep_until(self, event: Event, seconds: float) -> None:
+        if event.is_set():
+            return
+        self._sleep(seconds)
