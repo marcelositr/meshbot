@@ -43,6 +43,47 @@ def test_load_settings_returns_validated_settings(tmp_path: Path) -> None:
     assert settings.default_silence_minutes == 30
     assert settings.message_delay_seconds == 5
     assert settings.weather_provider == "inmet"
+    assert settings.defense_civil.mode == "normal"
+    assert settings.defense_civil.max_alerts == 5
+
+
+def test_defense_civil_mode_changes_default_presentation(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        VALID_CONFIG
+        + """
+[defesa_civil]
+mode = "emergency"
+""",
+        encoding="utf-8",
+    )
+
+    settings = load_settings(config)
+
+    assert settings.defense_civil.show_description
+    assert settings.defense_civil.show_instruction
+    assert settings.defense_civil.show_urgency
+    assert settings.defense_civil.show_certainty
+
+
+def test_defense_civil_options_override_mode(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        VALID_CONFIG
+        + """
+[defesa_civil]
+mode = "emergency"
+show_description = false
+show_instruction = false
+""",
+        encoding="utf-8",
+    )
+
+    settings = load_settings(config)
+
+    assert not settings.defense_civil.show_description
+    assert not settings.defense_civil.show_instruction
+    assert settings.defense_civil.show_urgency
 
 
 def test_development_cannot_use_real_transport(tmp_path: Path) -> None:
