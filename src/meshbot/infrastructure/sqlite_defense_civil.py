@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from meshbot.application.defense_civil import DefenseCivilAlert
@@ -19,7 +19,7 @@ class SQLiteDefenseCivilAlertRepository:
         self._initialize()
 
     def upsert(self, alert: DefenseCivilAlert, *, active: bool) -> None:
-        updated_at = datetime.now().astimezone().isoformat()
+        updated_at = datetime.now(UTC).isoformat()
         references = "\n".join(alert.references)
 
         with self._connect() as connection:
