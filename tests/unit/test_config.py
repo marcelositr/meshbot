@@ -149,3 +149,36 @@ def test_empty_optional_device_becomes_none(tmp_path: Path) -> None:
     settings = load_settings(config)
 
     assert settings.device is None
+
+
+def test_automatic_defense_civil_requires_feature_enabled(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        VALID_CONFIG
+        + """
+[defesa_civil]
+enabled = false
+automatic_enabled = true
+location = "Ribeirão Preto/SP"
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigurationError, match="enabled is required"):
+        load_settings(config)
+
+
+def test_automatic_defense_civil_requires_location(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        VALID_CONFIG
+        + """
+[defesa_civil]
+enabled = true
+automatic_enabled = true
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigurationError, match="location is required"):
+        load_settings(config)
