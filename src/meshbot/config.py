@@ -29,10 +29,8 @@ class FeatureSettings:
 class Settings:
     """Validated settings used by the application."""
 
-    environment: str
     name: str
     transport: str
-    channel_name: str
     channel_index: int
     device: str | None
     admins: tuple[str, ...]
@@ -42,6 +40,7 @@ class Settings:
     message_delay_seconds: float
     weather_provider: str
     weather_timeout_seconds: int
+    defense_civil_timeout_seconds: int
     weather_morning_start: str
     weather_afternoon_start: str
     weather_night_start: str
@@ -113,10 +112,8 @@ def _build_settings(raw: dict[str, Any]) -> Settings:
         defense_civil = _build_defense_civil_settings(defense_civil_raw)
 
         settings = Settings(
-            environment=_required_string(raw, "environment"),
             name=_required_string(raw, "name"),
             transport=_required_string(raw, "transport"),
-            channel_name=_required_string(raw, "channel_name"),
             channel_index=_required_int(raw, "channel_index"),
             device=_optional_nullable_string(raw, "device"),
             admins=_required_admins(raw),
@@ -132,6 +129,9 @@ def _build_settings(raw: dict[str, Any]) -> Settings:
             weather_automatic_enabled=_optional_bool(weather, "automatic_enabled", False),
             weather_location=_optional_string_allow_empty(weather, "location", ""),
             weather_recipient_id=_optional_string(weather, "recipient_id", "^all"),
+            defense_civil_timeout_seconds=_required_int(
+                defense_civil_raw, "timeout_seconds"
+            ),
             defense_civil=defense_civil,
             features=features,
             log_level=_required_string(raw, "log_level").upper(),
@@ -184,20 +184,11 @@ def _build_defense_civil_settings(raw: dict[str, Any]) -> DefenseCivilSettings:
 
 
 def _validate(settings: Settings) -> None:
-    if settings.environment not in _ALLOWED_ENVIRONMENTS:
-        raise ConfigurationError(
-            f"Invalid environment: {settings.environment!r}. "
-            f"Expected one of {sorted(_ALLOWED_ENVIRONMENTS)}."
-        )
-
     if settings.transport not in _ALLOWED_TRANSPORTS:
         raise ConfigurationError(
             f"Invalid transport: {settings.transport!r}. "
             f"Expected one of {sorted(_ALLOWED_TRANSPORTS)}."
         )
-
-    if settings.environment == "development" and settings.transport != "simulator":
-        raise ConfigurationError("Development environment must use the simulator transport.")
 
     if settings.channel_index < 0:
         raise ConfigurationError("channel_index must be zero or greater.")
@@ -216,6 +207,9 @@ def _validate(settings: Settings) -> None:
 
     if settings.weather_timeout_seconds <= 0:
         raise ConfigurationError("weather_timeout_seconds must be greater than zero.")
+
+    if settings.defense_civil_timeout_seconds <= 0:
+        raise ConfigurationError("defesa_civil.timeout_seconds must be greater than zero.")
 
     if settings.defense_civil.automatic_enabled and not settings.defense_civil.enabled:
         raise ConfigurationError(
