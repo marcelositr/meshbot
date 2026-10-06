@@ -128,6 +128,12 @@ class SQLiteDefenseCivilAlertRepository:
         return sqlite3.connect(self._database_path)
 
     @staticmethod
+    def _require_str(value: object) -> str:
+        if not isinstance(value, str):
+            raise ValueError("Invalid Defense Civil alert stored in database.")
+        return value
+
+    @staticmethod
     def _row_to_stored(row: tuple[object, ...]) -> StoredDefenseCivilAlert:
         (
             identifier,
@@ -151,15 +157,23 @@ class SQLiteDefenseCivilAlertRepository:
             updated_at,
         ) = row
 
-        values = (
-            identifier, sender, sent, status, msg_type, scope,
-            event, severity, urgency, certainty, area, headline,
-            description, instruction,
+        identifier = SQLiteDefenseCivilAlertRepository._require_str(identifier)
+        sender = SQLiteDefenseCivilAlertRepository._require_str(sender)
+        sent = SQLiteDefenseCivilAlertRepository._require_str(sent)
+        status = SQLiteDefenseCivilAlertRepository._require_str(status)
+        msg_type = SQLiteDefenseCivilAlertRepository._require_str(msg_type)
+        scope = SQLiteDefenseCivilAlertRepository._require_str(scope)
+        event = SQLiteDefenseCivilAlertRepository._require_str(event)
+        severity = SQLiteDefenseCivilAlertRepository._require_str(severity)
+        urgency = SQLiteDefenseCivilAlertRepository._require_str(urgency)
+        certainty = SQLiteDefenseCivilAlertRepository._require_str(certainty)
+        area = SQLiteDefenseCivilAlertRepository._require_str(area)
+        headline = SQLiteDefenseCivilAlertRepository._require_str(headline)
+        description = SQLiteDefenseCivilAlertRepository._require_str(description)
+        instruction = SQLiteDefenseCivilAlertRepository._require_str(instruction)
+        references_text = SQLiteDefenseCivilAlertRepository._require_str(
+            references_text
         )
-        if not all(isinstance(value, str) for value in values):
-            raise ValueError("Invalid Defense Civil alert stored in database.")
-        if not isinstance(references_text, str):
-            raise ValueError("Invalid Defense Civil references stored in database.")
         if onset is not None and not isinstance(onset, str):
             raise ValueError("Invalid Defense Civil onset stored in database.")
         if expires is not None and not isinstance(expires, str):
