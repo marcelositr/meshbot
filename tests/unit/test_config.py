@@ -122,3 +122,26 @@ def test_negative_message_delay_is_rejected(tmp_path: Path) -> None:
 
     with pytest.raises(ConfigurationError, match="zero or greater"):
         load_settings(config)
+
+def test_optional_device_is_loaded(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        VALID_CONFIG + 'device = "/dev/ttyUSB0"\n',
+        encoding="utf-8",
+    )
+
+    settings = load_settings(config)
+
+    assert settings.device == "/dev/ttyUSB0"
+
+
+def test_empty_optional_device_becomes_none(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        VALID_CONFIG + 'device = ""\n',
+        encoding="utf-8",
+    )
+
+    settings = load_settings(config)
+
+    assert settings.device is None
