@@ -1,8 +1,6 @@
 """Command-line interface for MeshBot."""
 
 from pathlib import Path
-from threading import Event, Thread
-
 from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.bot import MeshBot
 from meshbot.application.commands import (
@@ -40,6 +38,7 @@ from meshbot.infrastructure.meshtastic_transport import MeshtasticTransport
 from meshbot.infrastructure.simulator import SimulatorTransport
 from meshbot.infrastructure.sqlite_defense_civil import SQLiteDefenseCivilAlertRepository
 from meshbot.infrastructure.sqlite_users import SQLiteUserRepository
+from meshbot.interfaces.simulator_ui import run_simulator_chat
 
 
 def main() -> None:
@@ -52,9 +51,6 @@ def main() -> None:
         raise SystemExit(f"Configuration error: {exc}") from exc
 
     configure_logging(settings.log_level)
-
-    def display_message(message: OutgoingMessage) -> None:
-        print(f"{message.recipient_id} <- {message.text}")
 
     user_repository = SQLiteUserRepository(Path(settings.database_path))
     for node_id in settings.admins:
@@ -80,7 +76,7 @@ def main() -> None:
 
     transport: SimulatorTransport | MeshtasticTransport
     if settings.transport == "simulator":
-        transport = SimulatorTransport(on_send=display_message)
+        transport = SimulatorTransport()
     else:
         transport = MeshtasticTransport(
             settings.transport,
@@ -168,7 +164,7 @@ def main() -> None:
         if weather_bulletin_worker is not None:
             simulator_workers.append(weather_bulletin_worker)
         workers = tuple(simulator_workers)
-        _run_simulator(transport, bot, workers)
+        run_simulator_chat(transport, bot, workers)
         return
 
     workers_list: list[RuntimeWorker] = []
@@ -183,49 +179,3 @@ def main() -> None:
         ProductionRuntime(bot, transport, workers=workers).run()
     except (KeyboardInterrupt, EOFError):
         return
-
-
-def _run_simulator(
-    transport: SimulatorTransport,
-    bot: MeshBot,
-    workers: tuple[RuntimeWorker, ...] = (),
-) -> None:
-    stop_event = Event()
-    threads: list[Thread] = []
-    for worker in workers:
-        thread = Thread(
-            target=worker.run,
-            args=(stop_event,),
-            name="MeshBotBackgroundWorker",
-            daemon=True,
-        )
-        thread.start()
-        threads.append(thread)
-
-    try:
-        while True:
-            try:
-                line = input("> ").strip()
-            except (EOFError, KeyboardInterrupt):
-                print()
-                return
-
-            if line.lower() == "exit":
-                return
-
-            if not line:
-                continue
-
-            try:
-                node_id, text = line.split(maxsplit=1)
-            except ValueError:
-                print("Formato inválido. Use: <node_id> <mensagem>")
-                continue
-
-            transport.inject_message(node_id, text)
-            bot.process_next_message()
-            transport.sent_messages.clear()
-    finally:
-        stop_event.set()
-        for thread in threads:
-            thread.join()
