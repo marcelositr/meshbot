@@ -1,10 +1,10 @@
 """Command-line interface for MeshBot."""
 
-import time
 from pathlib import Path
 
 from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.bot import MeshBot
+from meshbot.application.runtime import ProductionRuntime
 from meshbot.application.commands import (
     BlockCommand,
     CommandHandler,
@@ -115,13 +115,9 @@ def main() -> None:
     assert isinstance(transport, MeshtasticTransport)
     print(f"{settings.name} - Meshtastic ({settings.transport})")
     try:
-        while True:
-            bot.process_next_message()
-            time.sleep(0.1)
+        ProductionRuntime(bot, transport).run()
     except (KeyboardInterrupt, EOFError):
         return
-    finally:
-        transport.close()
 
 
 def _run_simulator(transport: SimulatorTransport, bot: MeshBot) -> None:
