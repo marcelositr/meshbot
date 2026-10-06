@@ -260,8 +260,7 @@ def test_automatic_weather_requires_location(tmp_path: Path) -> None:
     config.write_text(
         VALID_CONFIG.replace(
             'timeout_seconds = 30',
-            'timeout_seconds = 30
-automatic_enabled = true',
+            'timeout_seconds = 30\nautomatic_enabled = true',
         ),
         encoding="utf-8",
     )
@@ -275,11 +274,8 @@ def test_automatic_weather_settings_are_loaded(tmp_path: Path) -> None:
     config.write_text(
         VALID_CONFIG.replace(
             'timeout_seconds = 30',
-            'timeout_seconds = 30
-automatic_enabled = true
-'
-            'location = "Ribeirão Preto/SP"
-recipient_id = "^all"',
+            'timeout_seconds = 30\nautomatic_enabled = true\n'
+            'location = "Ribeirão Preto/SP"\nrecipient_id = "^all"',
         ),
         encoding="utf-8",
     )
