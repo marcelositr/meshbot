@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections import deque
 from collections.abc import Callable
+from threading import Event, Lock, Thread
 from typing import Any
 
 from meshbot.domain.messages import IncomingMessage, OutgoingMessage
@@ -19,6 +20,8 @@ class MeshtasticTransport:
         device: str | None = None,
         interface_factory: Callable[[str, str | None], Any] | None = None,
         pubsub_module: Any | None = None,
+        reconnect_initial_delay: float = 1.0,
+        reconnect_max_delay: float = 30.0,
     ) -> None:
         if transport not in {"usb", "wifi", "bluetooth"}:
             raise ValueError("Meshtastic transport must be usb, wifi, or bluetooth.")
@@ -26,8 +29,19 @@ class MeshtasticTransport:
         self._channel_index = channel_index
         self._incoming: deque[IncomingMessage] = deque()
         self._connected = False
+        self._closed = False
+        self._reconnect_lock = Lock()
+        self._reconnect_stop = Event()
+        self._reconnected = Event()
+        self._reconnect_initial_delay = reconnect_initial_delay
+        self._reconnect_max_delay = reconnect_max_delay
+        self._interface_factory = interface_factory
+        self._transport = transport
+        self._device = device
         self._pub = pubsub_module or self._load_pubsub()
-        self._pub.subscribe(self._on_connection_established, "meshtastic.connection.established")
+        self._pub.subscribe(
+            self._on_connection_established, "meshtastic.connection.established"
+        )
         self._pub.subscribe(self._on_connection_lost, "meshtastic.connection.lost")
         self._pub.subscribe(self._on_text, "meshtastic.receive.text")
         self._interface = self._create_interface(
@@ -55,18 +69,61 @@ class MeshtasticTransport:
 
     def close(self) -> None:
         """Unsubscribe callbacks and close the radio interface."""
-        self._pub.unsubscribe(self._on_connection_established, "meshtastic.connection.established")
+        self._closed = True
+        self._reconnect_stop.set()
+        self._pub.unsubscribe(
+            self._on_connection_established, "meshtastic.connection.established"
+        )
         self._pub.unsubscribe(self._on_connection_lost, "meshtastic.connection.lost")
         self._pub.unsubscribe(self._on_text, "meshtastic.receive.text")
         close = getattr(self._interface, "close", None)
         if close is not None:
             close()
+        self._connected = False
 
     def _on_connection_established(self, *_: Any, **__: Any) -> None:
         self._connected = True
+        self._reconnected.set()
 
     def _on_connection_lost(self, *_: Any, **__: Any) -> None:
         self._connected = False
+        self._reconnected.clear()
+        self._start_reconnect()
+
+    def _start_reconnect(self) -> None:
+        if self._closed:
+            return
+        if not self._reconnect_lock.acquire(blocking=False):
+            return
+        self._reconnect_lock.release()
+        Thread(
+            target=self._reconnect_loop,
+            name="MeshBotMeshtasticReconnect",
+            daemon=True,
+        ).start()
+
+    def _reconnect_loop(self) -> None:
+        with self._reconnect_lock:
+            delay = self._reconnect_initial_delay
+            while not self._closed and not self._connected:
+                if self._reconnect_stop.wait(delay):
+                    return
+                try:
+                    old_interface = self._interface
+                    close = getattr(old_interface, "close", None)
+                    if close is not None:
+                        close()
+                    self._interface = self._create_interface(
+                        self._transport, self._device, self._interface_factory
+                    )
+                except Exception:
+                    delay = min(delay * 2, self._reconnect_max_delay)
+                    continue
+
+                self._reconnected.clear()
+                if self._reconnected.wait(self._reconnect_max_delay):
+                    return
+                delay = min(delay * 2, self._reconnect_max_delay)
 
     def _on_text(self, packet: dict[str, Any], **_: Any) -> None:
         decoded = packet.get("decoded")
