@@ -20,6 +20,7 @@ def make_xml_alert(
       <sent>2026-10-05T10:00:00-03:00</sent>
       <status>Actual</status>
       <msgType>{msg_type}</msgType>
+      <scope>Public</scope>
       <references>{references}</references>
       <info>
         <event>{event}</event>
@@ -64,6 +65,7 @@ def test_defense_civil_parses_namespaced_cap_info() -> None:
         sent="2026-10-05T10:00:00-03:00",
         status="Actual",
         msg_type="Alert",
+        scope="Public",
         references=(),
     )
 
@@ -73,6 +75,7 @@ def test_defense_civil_parses_namespaced_cap_info() -> None:
         sent="2026-10-05T10:00:00-03:00",
         status="Actual",
         msg_type="Alert",
+        scope="Public",
         references=(),
         event="Chuva intensa",
         severity="Severe",
