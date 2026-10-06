@@ -102,6 +102,14 @@ class LocationDefenseCivilTargetResolver:
         return self._location in area
 
 
+class DefenseCivilMessageSender(Protocol):
+    """Send outgoing messages through the configured transport."""
+
+    def send(self, message: OutgoingMessage) -> None:
+        """Send one outgoing message."""
+        ...
+
+
 class DefenseCivilDelivery:
     """Turn one alert into targeted outgoing messages."""
 
@@ -133,7 +141,7 @@ class DefenseCivilEventDispatcher:
     def __init__(
         self,
         delivery: DefenseCivilDelivery,
-        send: Protocol,
+        send: DefenseCivilMessageSender,
     ) -> None:
         self._delivery = delivery
         self._send = send
