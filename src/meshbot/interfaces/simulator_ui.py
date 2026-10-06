@@ -42,6 +42,13 @@ class SimulatorLogHandler(logging.Handler):
             self.handleError(record)
 
 
+def format_recipient(recipient_id: str) -> str:
+    """Format a transport recipient for the chat display."""
+    if recipient_id == "^all":
+        return "TODOS"
+    return recipient_id
+
+
 def parse_input(line: str) -> tuple[str, str] | None:
     """Parse simulator input in the form '<node_id> <message>'."""
     stripped = line.strip()
@@ -196,7 +203,7 @@ class SimulatorChatUI:
         self._events.put(
             ChatEntry(
                 timestamp=self._timestamp(),
-                sender="MeshBot",
+                sender=f"MeshBot → {format_recipient(message.recipient_id)}",
                 text=message.text,
                 kind="outgoing",
             )
@@ -312,7 +319,7 @@ class SimulatorChatUI:
 
     def _draw_input(self, screen: curses.window, y: int, width: int) -> None:
         self._safe_addstr(screen, y, 0, "─" * width, curses.color_pair(6))
-        prompt = "> "
+        prompt = "Para: > "
         available = max(1, width - len(prompt))
         start = max(0, self._cursor - available + 1)
         visible = self._input[start : start + available]
