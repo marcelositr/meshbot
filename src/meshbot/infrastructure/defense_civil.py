@@ -68,15 +68,16 @@ class DefenseCivilAlertService:
             sent = self._find_text(alert_element, "sent")
             status = self._find_text(alert_element, "status")
             msg_type = self._find_text(alert_element, "msgType")
+            scope = self._find_text(alert_element, "scope")
             references_text = self._find_text(
                 alert_element,
                 "references",
                 required=False,
             )
 
-            if not identifier or not sender or not sent or not status or not msg_type:
+            if not identifier or not sender or not sent or not status or not msg_type or not scope:
                 continue
-            if status != "Actual":
+            if status != "Actual" or scope != "Public":
                 continue
 
             references = self._parse_references(references_text)
@@ -104,6 +105,7 @@ class DefenseCivilAlertService:
                     sent=sent,
                     status=status,
                     msg_type=msg_type,
+                    scope=scope,
                     references=references,
                 )
                 if alert is not None:
@@ -165,6 +167,7 @@ class DefenseCivilAlertService:
         sent: str,
         status: str,
         msg_type: str,
+        scope: str,
         references: tuple[str, ...],
     ) -> DefenseCivilAlert | None:
         event = cls._find_text(info, "event")
@@ -187,6 +190,7 @@ class DefenseCivilAlertService:
             sent=sent,
             status=status,
             msg_type=msg_type,
+            scope=scope,
             references=references,
             event=event,
             severity=severity,
