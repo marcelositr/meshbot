@@ -142,6 +142,10 @@ def _build_defense_civil_settings(raw: dict[str, Any]) -> DefenseCivilSettings:
         ),
         show_urgency=_optional_bool(raw, "show_urgency", defaults["show_urgency"]),
         show_certainty=_optional_bool(raw, "show_certainty", defaults["show_certainty"]),
+        automatic_enabled=_optional_bool(raw, "automatic_enabled", False),
+        location=_optional_string(raw, "location", ""),
+        recipient_id=_optional_string(raw, "recipient_id", "^all"),
+        poll_interval_seconds=_optional_number(raw, "poll_interval_seconds", 300.0),
     )
 
 
@@ -178,6 +182,12 @@ def _validate(settings: Settings) -> None:
 
     if settings.weather_timeout_seconds <= 0:
         raise ConfigurationError("weather_timeout_seconds must be greater than zero.")
+
+    if settings.defense_civil.automatic_enabled and not settings.defense_civil.location:
+        raise ConfigurationError("defesa_civil.location is required when automatic_enabled is true.")
+
+    if settings.defense_civil.poll_interval_seconds <= 0:
+        raise ConfigurationError("defesa_civil.poll_interval_seconds must be greater than zero.")
 
     if settings.defense_civil.max_alerts <= 0:
         raise ConfigurationError("defesa_civil.max_alerts must be greater than zero.")
@@ -251,6 +261,13 @@ def _optional_int(raw: dict[str, Any], key: str, default: int) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise ConfigurationError(f"{key} must be an integer.")
     return value
+
+
+def _optional_number(raw: dict[str, Any], key: str, default: float) -> float:
+    value = raw.get(key, default)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise ConfigurationError(f"{key} must be a number.")
+    return float(value)
 
 
 def _optional_bool(raw: dict[str, Any], key: str, default: bool) -> bool:
