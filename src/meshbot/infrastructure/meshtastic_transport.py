@@ -34,6 +34,7 @@ class MeshtasticTransport:
         self._connected = False
         self._closed = False
         self._reconnect_lock = Lock()
+        self._interface_lock = Lock()
         self._reconnect_stop = Event()
         self._reconnected = Event()
         self._reconnect_initial_delay = reconnect_initial_delay
@@ -66,11 +67,12 @@ class MeshtasticTransport:
     def send(self, message: OutgoingMessage) -> None:
         """Send a text message through the configured Meshtastic channel."""
         try:
-            self._interface.sendText(
-                message.text,
-                destinationId=message.recipient_id,
-                channelIndex=self._channel_index,
-            )
+            with self._interface_lock:
+                self._interface.sendText(
+                    message.text,
+                    destinationId=message.recipient_id,
+                    channelIndex=self._channel_index,
+                )
         except Exception:
             logger.exception("Meshtastic send failed to %s.", message.recipient_id)
             raise
@@ -126,13 +128,14 @@ class MeshtasticTransport:
                     return
                 try:
                     self._reconnected.clear()
-                    old_interface = self._interface
-                    close = getattr(old_interface, "close", None)
-                    if close is not None:
-                        close()
-                    new_interface = self._create_interface(
-                        self._transport, self._device, self._interface_factory
-                    )
+                    with self._interface_lock:
+                        old_interface = self._interface
+                        close = getattr(old_interface, "close", None)
+                        if close is not None:
+                            close()
+                        new_interface = self._create_interface(
+                            self._transport, self._device, self._interface_factory
+                        )
                     if self._closed:
                         close = getattr(new_interface, "close", None)
                         if close is not None:
