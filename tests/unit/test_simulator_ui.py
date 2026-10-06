@@ -1,6 +1,6 @@
 """Tests for the simulator terminal UI helpers."""
 
-from meshbot.interfaces.simulator_ui import parse_input
+from meshbot.interfaces.simulator_ui import format_recipient, parse_input
 
 
 def test_parse_input_accepts_node_and_message() -> None:
@@ -18,3 +18,8 @@ def test_parse_input_rejects_blank_or_incomplete_input() -> None:
     assert parse_input("") is None
     assert parse_input("   ") is None
     assert parse_input("!12345678") is None
+
+
+def test_format_recipient_distinguishes_broadcast_and_node() -> None:
+    assert format_recipient("^all") == "TODOS"
+    assert format_recipient("!12345678") == "!12345678"
