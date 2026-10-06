@@ -183,6 +183,11 @@ def _validate(settings: Settings) -> None:
     if settings.weather_timeout_seconds <= 0:
         raise ConfigurationError("weather_timeout_seconds must be greater than zero.")
 
+    if settings.defense_civil.automatic_enabled and not settings.defense_civil.enabled:
+        raise ConfigurationError(
+            "defesa_civil.enabled is required when automatic_enabled is true."
+        )
+
     if settings.defense_civil.automatic_enabled and not settings.defense_civil.location:
         raise ConfigurationError(
             "defesa_civil.location is required when automatic_enabled is true."
