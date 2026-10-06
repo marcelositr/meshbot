@@ -126,7 +126,7 @@ def test_negative_message_delay_is_rejected(tmp_path: Path) -> None:
 def test_optional_device_is_loaded(tmp_path: Path) -> None:
     config = tmp_path / "config.toml"
     config.write_text(
-        VALID_CONFIG + 'device = "/dev/ttyUSB0"\n',
+        VALID_CONFIG.replace("admins = [\"!12345678\"]", "admins = [\"!12345678\"]\ndevice = \"/dev/ttyUSB0\""),
         encoding="utf-8",
     )
 
@@ -138,7 +138,7 @@ def test_optional_device_is_loaded(tmp_path: Path) -> None:
 def test_empty_optional_device_becomes_none(tmp_path: Path) -> None:
     config = tmp_path / "config.toml"
     config.write_text(
-        VALID_CONFIG + 'device = ""\n',
+        VALID_CONFIG.replace("admins = [\"!12345678\"]", "admins = [\"!12345678\"]\ndevice = \"\""),
         encoding="utf-8",
     )
 
