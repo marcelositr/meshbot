@@ -65,24 +65,33 @@ Tempo: weather.provider, weather.timeout_seconds e weather.periods.
 
 Defesa Civil: enabled, mode, max_alerts, max_message_length e show_*.
 
-## Configurações pendentes
+## Observabilidade
 
-weather.provider só deve permanecer configurável se houver intenção real de múltiplos provedores.
+\`log_level\` é aplicado ao processo na inicialização. Os níveis aceitos são \`DEBUG\`, \`INFO\`, \`WARNING\` e \`ERROR\`.
 
-channel_name ainda é informação de configuração; a seleção efetiva usada pelo transporte nesta etapa é channel_index.
+Em operação, os logs registram:
+- início e encerramento do runtime;
+- conexão, perda de conexão e reconexão do Meshtastic;
+- falhas de envio e de reconexão;
+- recebimento e envio de mensagens em nível \`DEBUG\`;
+- falhas de processamento.
+
+O conteúdo das mensagens não é colocado nos logs operacionais.
+
+O bot mantém contadores básicos em memória (\`received\`, \`processed\`, \`sent\`, \`rejected\`, \`failures\`) para diagnóstico e futura exposição por health/status ou métricas.
 
 ## Transporte Meshtastic
 
-Os transportes `usb`, `wifi` e `bluetooth` possuem adaptador inicial.
+Os transportes \`usb\`, \`wifi\` e \`bluetooth\` possuem adaptador inicial.
 
-`device` é opcional:
+\`device\` é opcional:
 - USB: caminho da porta serial;
 - Wi-Fi: endereço do dispositivo;
 - Bluetooth: endereço Bluetooth.
 
 O ambiente de produção não deve assumir uma porta, IP ou endereço fixo.
 
-A integração atual recebe e envia mensagens e acompanha os eventos de conexão. Ainda não cobre reconexão automática, diagnóstico operacional completo e supervisão 24/7.
+A integração atual recebe e envia mensagens, acompanha os eventos de conexão e tenta reconectar automaticamente com backoff.
 
 ## Produção
 
