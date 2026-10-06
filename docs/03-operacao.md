@@ -82,16 +82,16 @@ Os transportes `usb`, `wifi` e `bluetooth` possuem adaptador inicial.
 
 O ambiente de produção não deve assumir uma porta, IP ou endereço fixo.
 
-A integração atual já recebe e envia mensagens, mas ainda não cobre reconexão, diagnóstico operacional e supervisão 24/7.
+A integração atual recebe e envia mensagens e acompanha os eventos de conexão. Ainda não cobre reconexão automática, diagnóstico operacional completo e supervisão 24/7.
 
 ## Produção
 
 Antes de declarar produção pronta, devem existir:
 
-- conexão;
+- conexão inicial e estado conectado/desconectado;
 - recepção;
 - envio;
-- reconexão;
+- reconexão automática;
 - timeout;
 - seleção de canal;
 - identificação do dispositivo;
