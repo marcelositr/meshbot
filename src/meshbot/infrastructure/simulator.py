@@ -29,6 +29,10 @@ class SimulatorTransport:
         if self._on_send is not None:
             self._on_send(message)
 
+    def set_observer(self, observer: Callable[[OutgoingMessage], None] | None) -> None:
+        """Replace the callback notified when a message is sent."""
+        self._on_send = observer
+
     def inject_message(self, node_id: str, text: str) -> None:
         """Inject a virtual node message into the simulated network."""
         self._incoming.append(IncomingMessage(sender_id=node_id, text=text))
