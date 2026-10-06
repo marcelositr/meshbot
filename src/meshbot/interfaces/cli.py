@@ -29,6 +29,8 @@ from meshbot.application.moderation import ModerationService
 from meshbot.application.moderation_notifications import ModerationNotifier
 from meshbot.application.runtime import ProductionRuntime
 from meshbot.application.users import UserService
+from meshbot.application.weather_bulletin import WeatherBulletinWorker
+from meshbot.application.runtime import RuntimeWorker
 from meshbot.config import ConfigurationError, load_settings
 from meshbot.domain.messages import OutgoingMessage
 from meshbot.domain.users import User, UserRole
@@ -108,6 +110,20 @@ def main() -> None:
         afternoon_start=settings.weather_afternoon_start,
         night_start=settings.weather_night_start,
     )
+    weather_bulletin_worker = None
+    if settings.weather_automatic_enabled:
+        weather_bulletin_worker = WeatherBulletinWorker(
+            weather_service,
+            transport,
+            settings.weather_location,
+            settings.weather_recipient_id,
+            (
+                ("manhã", settings.weather_morning_start),
+                ("tarde", settings.weather_afternoon_start),
+                ("noite", settings.weather_night_start),
+            ),
+        )
+
     user_service = UserService(user_repository)
     command_handler = CommandHandler(
         [
@@ -139,11 +155,21 @@ def main() -> None:
         print("          !12345678 !defesacivil Ituverava/SP")
         print("Digite 'exit' para sair.")
         assert isinstance(transport, SimulatorTransport)
-        workers = (defense_civil_worker,) if defense_civil_worker is not None else ()
+        workers_list: list[RuntimeWorker] = []
+        if defense_civil_worker is not None:
+            workers_list.append(defense_civil_worker)
+        if weather_bulletin_worker is not None:
+            workers_list.append(weather_bulletin_worker)
+        workers = tuple(workers_list)
         _run_simulator(transport, bot, workers)
         return
 
-    workers = (defense_civil_worker,) if defense_civil_worker is not None else ()
+    workers_list: list[RuntimeWorker] = []
+    if defense_civil_worker is not None:
+        workers_list.append(defense_civil_worker)
+    if weather_bulletin_worker is not None:
+        workers_list.append(weather_bulletin_worker)
+    workers = tuple(workers_list)
     assert isinstance(transport, MeshtasticTransport)
     print(f"{settings.name} - Meshtastic ({settings.transport})")
     try:
@@ -155,7 +181,7 @@ def main() -> None:
 def _run_simulator(
     transport: SimulatorTransport,
     bot: MeshBot,
-    workers: tuple[DefenseCivilPoller, ...] = (),
+    workers: tuple[RuntimeWorker, ...] = (),
 ) -> None:
     stop_event = Event()
     threads: list[Thread] = []
