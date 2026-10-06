@@ -23,7 +23,6 @@ from meshbot.application.weather import (
 from meshbot.domain.messages import IncomingMessage, OutgoingMessage
 from meshbot.domain.users import normalize_user_name
 
-
 logger = logging.getLogger(__name__)
 
 
