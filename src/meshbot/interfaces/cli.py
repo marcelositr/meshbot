@@ -27,10 +27,9 @@ from meshbot.application.defense_civil_state import DefenseCivilStateService
 from meshbot.application.logging import configure_logging
 from meshbot.application.moderation import ModerationService
 from meshbot.application.moderation_notifications import ModerationNotifier
-from meshbot.application.runtime import ProductionRuntime
+from meshbot.application.runtime import ProductionRuntime, RuntimeWorker
 from meshbot.application.users import UserService
 from meshbot.application.weather_bulletin import WeatherBulletinWorker
-from meshbot.application.runtime import RuntimeWorker
 from meshbot.config import ConfigurationError, load_settings
 from meshbot.domain.messages import OutgoingMessage
 from meshbot.domain.users import User, UserRole
