@@ -54,8 +54,6 @@ def test_synchronize_adds_new_alerts() -> None:
     repository = MemoryRepository()
     service = DefenseCivilStateService(repository)
 
-    service.synchronize((make_alert("alert-1"),))
-
     events = service.synchronize((make_alert("alert-1"),))
 
     assert repository.items["alert-1"][1]
