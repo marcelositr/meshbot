@@ -56,19 +56,46 @@ def run_worker(
     worker.run(stop_event)
 
 
-def test_bulletin_is_sent_once_inside_configured_window() -> None:
+def run_worker(
+    worker_factory,
+    now: datetime,
+    iterations: int,
+) -> tuple[FakeWeatherService, FakeTransport]:
+    from threading import Event
+
+    stop_event = Event()
     service = FakeWeatherService()
     transport = FakeTransport()
-    worker = WeatherBulletinWorker(
-        service,
-        transport,
-        "Ribeirão Preto/SP",
-        "^all",
-        (("manhã", "06:00"),),
-        now=lambda: datetime(2026, 10, 6, 6, 0, 30),
-    )
+    calls = 0
 
-    run_worker(worker, datetime(2026, 10, 6, 6, 0, 30), 3)
+    def sleep(_: float) -> None:
+        nonlocal calls
+        calls += 1
+        if calls >= iterations:
+            stop_event.set()
+
+    worker = worker_factory(service, transport, now, sleep)
+    worker.run(stop_event)
+    return service, transport
+
+
+def test_bulletin_is_sent_once_inside_configured_window() -> None:
+    def factory(service, transport, now, sleep):
+        return WeatherBulletinWorker(
+            service,
+            transport,
+            "Ribeirão Preto/SP",
+            "^all",
+            (("manhã", "06:00"),),
+            now=lambda: now,
+            sleep=sleep,
+        )
+
+    service, transport = run_worker(
+        factory,
+        datetime(2026, 10, 6, 6, 0, 30),
+        3,
+    )
 
     assert service.calls == 1
     assert len(transport.sent) == 1
@@ -77,26 +104,41 @@ def test_bulletin_is_sent_once_inside_configured_window() -> None:
 
 
 def test_bulletin_is_not_sent_after_one_minute_window() -> None:
-    service = FakeWeatherService()
-    transport = FakeTransport()
-    worker = WeatherBulletinWorker(
-        service,
-        transport,
-        "Ribeirão Preto/SP",
-        "^all",
-        (("manhã", "06:00"),),
-        now=lambda: datetime(2026, 10, 6, 6, 1, 1),
-    )
+    def factory(service, transport, now, sleep):
+        return WeatherBulletinWorker(
+            service,
+            transport,
+            "Ribeirão Preto/SP",
+            "^all",
+            (("manhã", "06:00"),),
+            now=lambda: now,
+            sleep=sleep,
+        )
 
-    run_worker(worker, datetime(2026, 10, 6, 6, 1, 1), 2)
+    service, transport = run_worker(
+        factory,
+        datetime(2026, 10, 6, 6, 1, 1),
+        2,
+    )
 
     assert service.calls == 0
     assert transport.sent == []
 
 
 def test_failed_bulletin_retries_during_same_window() -> None:
+    from threading import Event
+
     service = FakeWeatherService(fail_first=True)
     transport = FakeTransport()
+    stop_event = Event()
+    calls = 0
+
+    def sleep(_: float) -> None:
+        nonlocal calls
+        calls += 1
+        if calls >= 2:
+            stop_event.set()
+
     worker = WeatherBulletinWorker(
         service,
         transport,
@@ -104,9 +146,10 @@ def test_failed_bulletin_retries_during_same_window() -> None:
         "^all",
         (("manhã", "06:00"),),
         now=lambda: datetime(2026, 10, 6, 6, 0, 10),
+        sleep=sleep,
     )
 
-    run_worker(worker, datetime(2026, 10, 6, 6, 0, 10), 2)
+    worker.run(stop_event)
 
     assert service.calls == 2
     assert len(transport.sent) == 1
@@ -116,16 +159,13 @@ def test_bulletin_worker_rejects_invalid_configuration() -> None:
     service = FakeWeatherService()
     transport = FakeTransport()
 
-    for kwargs in (
-        {"location": "", "recipient_id": "^all"},
-        {"location": "Ribeirão Preto/SP", "recipient_id": ""},
-    ):
+    for location, recipient_id in (("", "^all"), ("Ribeirão Preto/SP", "")):
         try:
             WeatherBulletinWorker(
                 service,
                 transport,
-                kwargs["location"],
-                kwargs["recipient_id"],
+                location,
+                recipient_id,
                 (("manhã", "06:00"),),
             )
         except ValueError:
