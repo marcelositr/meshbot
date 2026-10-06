@@ -80,15 +80,14 @@ defense_civil_monitor = false
 def test_automatic_weather_requires_weather_bulletin_feature(tmp_path: Path) -> None:
     config = tmp_path / "config.toml"
     config.write_text(
-        VALID_CONFIG
+        VALID_CONFIG.replace(
+            'timeout_seconds = 30',
+            'timeout_seconds = 30\nautomatic_enabled = true\n'
+            'location = "Ribeirão Preto/SP"\nrecipient_id = "^all"',
+        )
         + """
 [features]
 weather_bulletin = false
-
-[weather]
-automatic_enabled = true
-location = "Ribeirão Preto/SP"
-recipient_id = "^all"
 """,
         encoding="utf-8",
     )
