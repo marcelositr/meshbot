@@ -9,16 +9,6 @@ from meshbot.application.defense_civil_state import DefenseCivilAlertEvent
 from meshbot.domain.messages import OutgoingMessage
 
 
-@dataclass(frozen=True, slots=True)
-class DefenseCivilDeliverySettings:
-    """Policy for automatic Defense Civil transmissions."""
-
-    enabled: bool
-    location: str
-    recipient_id: str
-    max_message_length: int
-
-
 class DefenseCivilAlertFormatter(Protocol):
     """Format one alert into radio-sized messages."""
 
