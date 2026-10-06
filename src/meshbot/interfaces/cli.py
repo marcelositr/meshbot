@@ -15,6 +15,14 @@ from meshbot.application.commands import (
     TempoCommand,
     UnblockCommand,
 )
+from meshbot.application.defense_civil_delivery import (
+    CompactDefenseCivilAlertFormatter,
+    DefenseCivilDelivery,
+    DefenseCivilEventDispatcher,
+    LocationDefenseCivilTargetResolver,
+)
+from meshbot.application.defense_civil_poller import DefenseCivilPoller
+from meshbot.application.defense_civil_state import DefenseCivilStateService
 from meshbot.application.logging import configure_logging
 from meshbot.application.moderation import ModerationService
 from meshbot.application.moderation_notifications import ModerationNotifier
@@ -27,6 +35,7 @@ from meshbot.infrastructure.defense_civil import DefenseCivilAlertService
 from meshbot.infrastructure.inmet_weather import InmetWeatherService
 from meshbot.infrastructure.meshtastic_transport import MeshtasticTransport
 from meshbot.infrastructure.simulator import SimulatorTransport
+from meshbot.infrastructure.sqlite_defense_civil import SQLiteDefenseCivilAlertRepository
 from meshbot.infrastructure.sqlite_users import SQLiteUserRepository
 
 
@@ -67,6 +76,32 @@ def main() -> None:
     moderation_notifier = ModerationNotifier(user_repository)
 
     transport: SimulatorTransport | MeshtasticTransport
+    defense_civil_worker = None
+    if settings.defense_civil.automatic_enabled and settings.transport != "simulator":
+        defense_repository = SQLiteDefenseCivilAlertRepository(Path(settings.database_path))
+        defense_state = DefenseCivilStateService(defense_repository)
+        defense_delivery = DefenseCivilDelivery(
+            CompactDefenseCivilAlertFormatter(settings.defense_civil.max_message_length),
+            LocationDefenseCivilTargetResolver(settings.defense_civil.location),
+            settings.defense_civil.recipient_id,
+        )
+        defense_dispatcher = DefenseCivilEventDispatcher(defense_delivery, transport)
+        defense_civil_worker = DefenseCivilPoller(
+            DefenseCivilAlertService(settings.weather_timeout_seconds),
+            defense_state,
+            poll_interval_seconds=settings.defense_civil.poll_interval_seconds,
+            sleep=None,
+        )
+        original_poll_once = defense_civil_worker.poll_once
+
+        def poll_and_dispatch() -> tuple:
+            events = original_poll_once()
+            for event in events:
+                defense_dispatcher.dispatch(event)
+            return events
+
+        defense_civil_worker.poll_once = poll_and_dispatch  # type: ignore[method-assign]
+
     if settings.transport == "simulator":
         transport = SimulatorTransport(on_send=display_message)
     else:
@@ -118,7 +153,8 @@ def main() -> None:
     assert isinstance(transport, MeshtasticTransport)
     print(f"{settings.name} - Meshtastic ({settings.transport})")
     try:
-        ProductionRuntime(bot, transport).run()
+        workers = (defense_civil_worker,) if defense_civil_worker is not None else ()
+        ProductionRuntime(bot, transport, workers=workers).run()
     except (KeyboardInterrupt, EOFError):
         return
 
