@@ -67,11 +67,22 @@ Defesa Civil: enabled, mode, max_alerts, max_message_length e show_*.
 
 ## Configurações pendentes
 
-registration_requires_admin aparece no exemplo, mas não é usado. Deve ser implementado ou removido.
-
 weather.provider só deve permanecer configurável se houver intenção real de múltiplos provedores.
 
-transport só deve anunciar opções quando houver adaptadores funcionais.
+channel_name ainda é informação de configuração; a seleção efetiva usada pelo transporte nesta etapa é channel_index.
+
+## Transporte Meshtastic
+
+Os transportes `usb`, `wifi` e `bluetooth` possuem adaptador inicial.
+
+`device` é opcional:
+- USB: caminho da porta serial;
+- Wi-Fi: endereço do dispositivo;
+- Bluetooth: endereço Bluetooth.
+
+O ambiente de produção não deve assumir uma porta, IP ou endereço fixo.
+
+A integração atual já recebe e envia mensagens, mas ainda não cobre reconexão, diagnóstico operacional e supervisão 24/7.
 
 ## Produção
 
