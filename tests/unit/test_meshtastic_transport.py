@@ -118,3 +118,39 @@ def test_close_unsubscribes_and_closes_interface() -> None:
     assert not transport.is_connected
     assert interface.closed
     assert pub.callbacks == {}
+
+def test_connection_loss_recreates_interface_and_recovers() -> None:
+    from threading import Event
+
+    pub = FakePubSub()
+    first = FakeInterface()
+    second = FakeInterface()
+    created = Event()
+    interfaces = iter([first, second])
+
+    def factory(_transport: str, _device: str | None) -> FakeInterface:
+        interface = next(interfaces)
+        if interface is second:
+            created.set()
+            pub.emit("meshtastic.connection.established")
+        return interface
+
+    transport = MeshtasticTransport(
+        "usb",
+        interface_factory=factory,
+        pubsub_module=pub,
+        reconnect_initial_delay=0,
+        reconnect_max_delay=1,
+    )
+
+    pub.emit("meshtastic.connection.established")
+    assert transport.is_connected
+
+    pub.emit("meshtastic.connection.lost")
+
+    assert created.wait(1)
+    assert transport.is_connected
+    assert first.closed
+    assert not second.closed
+
+    transport.close()
