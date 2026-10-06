@@ -4,8 +4,18 @@ from meshbot.application.defense_civil import DefenseCivilAlert
 from meshbot.application.defense_civil_delivery import (
     CompactDefenseCivilAlertFormatter,
     DefenseCivilDelivery,
+    DefenseCivilEventDispatcher,
     LocationDefenseCivilTargetResolver,
 )
+from meshbot.application.defense_civil_state import DefenseCivilAlertEvent
+
+
+class FakeSender:
+    def __init__(self) -> None:
+        self.messages = []
+
+    def send(self, message) -> None:
+        self.messages.append(message)
 
 
 def make_alert(area: str = "Ituverava/SP") -> DefenseCivilAlert:
@@ -82,3 +92,34 @@ def test_delivery_ignores_non_matching_alert() -> None:
     )
 
     assert delivery.deliver(make_alert()) == ()
+
+
+def test_dispatcher_sends_new_and_updated_events() -> None:
+    sender = FakeSender()
+    delivery = DefenseCivilDelivery(
+        CompactDefenseCivilAlertFormatter(),
+        LocationDefenseCivilTargetResolver("Ituverava/SP"),
+        "!12345678",
+    )
+    dispatcher = DefenseCivilEventDispatcher(delivery, sender)
+
+    dispatcher.dispatch(DefenseCivilAlertEvent("new", make_alert()))
+    dispatcher.dispatch(
+        DefenseCivilAlertEvent("updated", replace(make_alert(), event="Atualizado"))
+    )
+
+    assert len(sender.messages) == 2
+
+
+def test_dispatcher_ignores_deactivated_events() -> None:
+    sender = FakeSender()
+    delivery = DefenseCivilDelivery(
+        CompactDefenseCivilAlertFormatter(),
+        LocationDefenseCivilTargetResolver("Ituverava/SP"),
+        "!12345678",
+    )
+    dispatcher = DefenseCivilEventDispatcher(delivery, sender)
+
+    dispatcher.dispatch(DefenseCivilAlertEvent("deactivated", make_alert()))
+
+    assert sender.messages == []
