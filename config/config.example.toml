@@ -23,10 +23,10 @@ name = "MeshBot"
 # ------------------------------------------------------------
 # TRANSPORTE
 # ------------------------------------------------------------
-# simulator = rede/chat local
-# wifi      = Meshtastic via Wi-Fi
-# bluetooth = Meshtastic via Bluetooth
-# usb       = Meshtastic via USB
+# simulator = rede/chat local (implementado)
+# wifi      = Meshtastic via Wi-Fi (planejado)
+# bluetooth = Meshtastic via Bluetooth (planejado)
+# usb       = Meshtastic via USB (planejado)
 transport = "simulator"
 
 # ------------------------------------------------------------
