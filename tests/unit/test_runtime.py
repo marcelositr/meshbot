@@ -31,8 +31,8 @@ def test_run_processes_messages_until_stop_and_closes_transport() -> None:
     bot = FakeBot(stop_event)
     transport = FakeTransport()
     runtime = ProductionRuntime(
-        bot,  # type: ignore[arg-type]
-        transport,  # type: ignore[arg-type]
+        bot,
+        transport,
         sleep=lambda _seconds: None,
     )
 
@@ -65,7 +65,7 @@ def test_rejects_non_positive_poll_interval() -> None:
 
     with pytest.raises(ValueError, match="poll_interval_seconds"):
         ProductionRuntime(
-            FakeBot(Event()),  # type: ignore[arg-type]
-            transport,  # type: ignore[arg-type]
+            FakeBot(Event()),
+            transport,
             poll_interval_seconds=0,
         )
