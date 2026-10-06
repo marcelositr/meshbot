@@ -159,6 +159,44 @@ def test_close_during_reconnect_closes_new_interface() -> None:
     assert second.closed
 
 
+def test_close_during_reconnect_does_not_publish_new_interface() -> None:
+    from threading import Event, Thread
+
+    pub = FakePubSub()
+    first = FakeInterface()
+    second = FakeInterface()
+    factory_started = Event()
+    release_factory = Event()
+    interfaces = iter([first, second])
+
+    def factory(_transport: str, _device: str | None) -> FakeInterface:
+        interface = next(interfaces)
+        if interface is second:
+            factory_started.set()
+            release_factory.wait(1)
+        return interface
+
+    transport = MeshtasticTransport(
+        "usb",
+        interface_factory=factory,
+        pubsub_module=pub,
+        reconnect_initial_delay=0,
+        reconnect_max_delay=1,
+    )
+
+    pub.emit("meshtastic.connection.established")
+    pub.emit("meshtastic.connection.lost")
+    assert factory_started.wait(1)
+
+    closer = Thread(target=transport.close)
+    closer.start()
+    release_factory.set()
+    closer.join(timeout=1)
+
+    assert not closer.is_alive()
+    assert second.closed
+
+
 def test_send_waits_for_reconnect_interface_lock() -> None:
     from threading import Event, Thread
 
