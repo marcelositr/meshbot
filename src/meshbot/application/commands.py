@@ -179,11 +179,34 @@ class DefenseCivilCommand:
 
     name = "defesacivil"
 
-    def __init__(self, service: DefenseCivilService) -> None:
+    def __init__(
+        self,
+        service: DefenseCivilService,
+        settings: DefenseCivilSettings | None = None,
+    ) -> None:
         self._service = service
+        self._settings = settings or DefenseCivilSettings(
+            enabled=True,
+            mode="normal",
+            max_alerts=5,
+            max_message_length=180,
+            show_severity=True,
+            show_description=False,
+            show_instruction=False,
+            show_urgency=False,
+            show_certainty=False,
+        )
 
     def execute(self, message: IncomingMessage) -> tuple[OutgoingMessage, ...]:
         """Resolve the requested city and return active alerts."""
+        if not self._settings.enabled:
+            return (
+                OutgoingMessage(
+                    recipient_id=message.sender_id,
+                    text="Consulta de Defesa Civil desativada.",
+                ),
+            )
+
         parts = message.text.strip().split(maxsplit=1)
         location = parts[1].strip() if len(parts) == 2 else ""
 
@@ -220,32 +243,90 @@ class DefenseCivilCommand:
             )
 
         if not alerts:
-            return (
-                OutgoingMessage(
-                    recipient_id=message.sender_id,
-                    text="⚠️ ALERTAS DEFESA CIVIL",
-                ),
-                OutgoingMessage(
-                    recipient_id=message.sender_id,
-                    text="Nenhum alerta ativo.",
-                ),
+            return self._messages(
+                message,
+                ("⚠️ ALERTAS DEFESA CIVIL", "Nenhum alerta ativo."),
             )
 
+        visible_alerts = alerts[: self._settings.max_alerts]
         responses: list[OutgoingMessage] = [
             OutgoingMessage(
                 recipient_id=message.sender_id,
                 text="⚠️ ALERTAS DEFESA CIVIL",
             )
         ]
-        for alert in alerts:
-            title = " ".join((alert.headline or alert.event).split())
+
+        for alert in visible_alerts:
+            for part in self._split_text(self._format_alert(alert)):
+                responses.append(
+                    OutgoingMessage(
+                        recipient_id=message.sender_id,
+                        text=part,
+                    )
+                )
+
+        remaining = len(alerts) - len(visible_alerts)
+        if remaining:
             responses.append(
                 OutgoingMessage(
                     recipient_id=message.sender_id,
-                    text=f"{title} — severidade: {alert.severity}.",
+                    text=f"Há mais {remaining} alerta(s) ativo(s) nesta localidade.",
                 )
             )
+
         return tuple(responses)
+
+    def _format_alert(self, alert: DefenseCivilAlert) -> str:
+        fields = [" ".join((alert.headline or alert.event).split())]
+        if self._settings.show_severity:
+            fields.append(f"Severidade: {alert.severity}.")
+        if self._settings.show_urgency:
+            fields.append(f"Urgência: {alert.urgency}.")
+        if self._settings.show_certainty:
+            fields.append(f"Certeza: {alert.certainty}.")
+        if self._settings.show_description and alert.description:
+            fields.append(" ".join(alert.description.split()))
+        if self._settings.show_instruction and alert.instruction:
+            fields.append(" ".join(alert.instruction.split()))
+        return "\n".join(field for field in fields if field)
+
+    def _split_text(self, text: str) -> tuple[str, ...]:
+        limit = self._settings.max_message_length
+        if len(text) <= limit:
+            return (text,)
+
+        words = text.split()
+        parts: list[str] = []
+        current = ""
+
+        for word in words:
+            candidate = word if not current else f"{current} {word}"
+            if len(candidate) <= limit:
+                current = candidate
+                continue
+            if current:
+                parts.append(current)
+            if len(word) > limit:
+                parts.extend(
+                    word[index : index + limit] for index in range(0, len(word), limit)
+                )
+                current = ""
+            else:
+                current = word
+
+        if current:
+            parts.append(current)
+        return tuple(parts)
+
+    @staticmethod
+    def _messages(
+        message: IncomingMessage,
+        texts: tuple[str, ...],
+    ) -> tuple[OutgoingMessage, ...]:
+        return tuple(
+            OutgoingMessage(recipient_id=message.sender_id, text=text)
+            for text in texts
+        )
 
 
 class CommandHandler:
