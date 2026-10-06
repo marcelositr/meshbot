@@ -251,7 +251,6 @@ Isso evita registrar comandos ou workers desnecessários.
 Não são tarefas automáticas; devem ser criadas somente quando houver necessidade real:
 
 - relógio injetável onde testes temporais ficarem difíceis;
-- timeout específico da Defesa Civil;
 - localização/GPS;
 - geometria CAP;
 - outbox de transmissão;
