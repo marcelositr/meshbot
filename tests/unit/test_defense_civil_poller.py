@@ -1,10 +1,14 @@
+from datetime import UTC, datetime
 from threading import Event
 
 import pytest
 
 from meshbot.application.defense_civil import DefenseCivilAlert
 from meshbot.application.defense_civil_poller import DefenseCivilPoller
-from meshbot.application.defense_civil_state import DefenseCivilStateService
+from meshbot.application.defense_civil_state import (
+    DefenseCivilStateService,
+    StoredDefenseCivilAlert,
+)
 
 
 class MemoryRepository:
@@ -14,11 +18,26 @@ class MemoryRepository:
     def upsert(self, alert: DefenseCivilAlert, *, active: bool) -> None:
         self.items[alert.identifier] = (alert, active)
 
-    def get(self, identifier: str):
-        return None
+    def get(self, identifier: str) -> StoredDefenseCivilAlert | None:
+        item = self.items.get(identifier)
+        if item is None:
+            return None
+        return StoredDefenseCivilAlert(
+            alert=item[0],
+            active=item[1],
+            updated_at=datetime.now(UTC),
+        )
 
-    def list_active(self):
-        return ()
+    def list_active(self) -> tuple[StoredDefenseCivilAlert, ...]:
+        return tuple(
+            StoredDefenseCivilAlert(
+                alert=alert,
+                active=active,
+                updated_at=__import__("datetime").datetime.now(__import__("datetime").UTC),
+            )
+            for alert, active in self.items.values()
+            if active
+        )
 
 
 class FakeFeed:
