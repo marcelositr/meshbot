@@ -23,8 +23,7 @@ from meshbot.application.defense_civil_delivery import (
     LocationDefenseCivilTargetResolver,
 )
 from meshbot.application.defense_civil_poller import DefenseCivilPoller
-from meshbot.application.defense_civil_state import DefenseCivilAlertEvent
-from meshbot.application.defense_civil_state import DefenseCivilStateService
+from meshbot.application.defense_civil_state import DefenseCivilAlertEvent, DefenseCivilStateService
 from meshbot.application.logging import configure_logging
 from meshbot.application.moderation import ModerationService
 from meshbot.application.moderation_notifications import ModerationNotifier
@@ -39,23 +38,6 @@ from meshbot.infrastructure.meshtastic_transport import MeshtasticTransport
 from meshbot.infrastructure.simulator import SimulatorTransport
 from meshbot.infrastructure.sqlite_defense_civil import SQLiteDefenseCivilAlertRepository
 from meshbot.infrastructure.sqlite_users import SQLiteUserRepository
-
-
-class DispatchingDefenseCivilPoller:
-    """Run the Defense Civil poller and dispatch lifecycle events."""
-
-    def __init__(self, poller: DefenseCivilPoller, dispatcher: DefenseCivilEventDispatcher) -> None:
-        self._poller = poller
-        self._dispatcher = dispatcher
-
-    def run(self, stop_event: Event) -> None:
-        self._poller.run(stop_event)
-
-    def poll_once(self) -> tuple[DefenseCivilAlertEvent, ...]:
-        events = self._poller.poll_once()
-        for event in events:
-            self._dispatcher.dispatch(event)
-        return events
 
 
 def main() -> None:
@@ -95,6 +77,14 @@ def main() -> None:
     moderation_notifier = ModerationNotifier(user_repository)
 
     transport: SimulatorTransport | MeshtasticTransport
+    if settings.transport == "simulator":
+        transport = SimulatorTransport(on_send=display_message)
+    else:
+        transport = MeshtasticTransport(
+            settings.transport,
+            channel_index=settings.channel_index,
+            device=settings.device,
+        )
     defense_civil_worker = None
     if settings.defense_civil.automatic_enabled and settings.transport != "simulator":
         defense_repository = SQLiteDefenseCivilAlertRepository(Path(settings.database_path))
@@ -109,21 +99,9 @@ def main() -> None:
             DefenseCivilAlertService(settings.weather_timeout_seconds),
             defense_state,
             poll_interval_seconds=settings.defense_civil.poll_interval_seconds,
-            sleep=None,
-        )
-        defense_civil_worker = DispatchingDefenseCivilPoller(
-            defense_civil_worker,
-            defense_dispatcher,
+            on_events=defense_dispatcher.dispatch,
         )
 
-    if settings.transport == "simulator":
-        transport = SimulatorTransport(on_send=display_message)
-    else:
-        transport = MeshtasticTransport(
-            settings.transport,
-            channel_index=settings.channel_index,
-            device=settings.device,
-        )
     weather_service = InmetWeatherService(
         timeout_seconds=settings.weather_timeout_seconds,
         morning_start=settings.weather_morning_start,
