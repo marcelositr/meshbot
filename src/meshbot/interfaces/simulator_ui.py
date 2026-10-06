@@ -314,7 +314,7 @@ class SimulatorChatUI:
 
         self._safe_addstr(screen, y + 1, 0, prompt, curses.color_pair(1) | curses.A_BOLD)
         self._safe_addstr(screen, y + 1, len(prompt), visible, curses.color_pair(5))
-        screen.move(y + 1, min(width - 1, cursor_x + len(prompt)))
+        screen.move(y + 1, min(width - 1, cursor_x))
 
     @staticmethod
     def _safe_addstr(
@@ -347,7 +347,7 @@ def run_simulator_chat(
     root_logger.addHandler(log_handler)
 
     try:
-        transport._on_send = ui.add_outgoing_message
+        transport.set_observer(ui.add_outgoing_message)
         ui.run()
     finally:
         root_logger.removeHandler(log_handler)
