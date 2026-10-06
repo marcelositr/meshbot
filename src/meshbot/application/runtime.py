@@ -4,18 +4,34 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from threading import Event
+from typing import Protocol
 
 from meshbot.application.bot import MeshBot
-from meshbot.infrastructure.meshtastic_transport import MeshtasticTransport
+
+
+class BotRunner(Protocol):
+    """Application contract for a continuously processed bot."""
+
+    def process_next_message(self) -> bool:
+        """Process one queued message."""
+        ...
+
+
+class ClosableTransport(Protocol):
+    """Transport contract required by the production runtime."""
+
+    def close(self) -> None:
+        """Close the transport."""
+        ...
 
 
 class ProductionRuntime:
-    """Run MeshBot continuously against the real Meshtastic transport."""
+    """Run MeshBot continuously against a closable transport."""
 
     def __init__(
         self,
-        bot: MeshBot,
-        transport: MeshtasticTransport,
+        bot: BotRunner,
+        transport: ClosableTransport,
         poll_interval_seconds: float = 0.1,
         sleep: Callable[[float], None] | None = None,
     ) -> None:
