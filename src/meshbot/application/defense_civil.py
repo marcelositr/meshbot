@@ -8,12 +8,37 @@ from typing import Protocol
 class DefenseCivilAlert:
     """Alert data published by the official Defense Civil feed."""
 
+    identifier: str
+    sender: str
+    sent: str
+    status: str
+    msg_type: str
+    references: tuple[str, ...]
     event: str
     severity: str
+    urgency: str
+    certainty: str
     area: str
     headline: str
     description: str
+    instruction: str
+    onset: str | None
     expires: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class DefenseCivilSettings:
+    """Presentation and operational policy for Defense Civil responses."""
+
+    enabled: bool
+    mode: str
+    max_alerts: int
+    max_message_length: int
+    show_severity: bool
+    show_description: bool
+    show_instruction: bool
+    show_urgency: bool
+    show_certainty: bool
 
 
 class DefenseCivilServiceError(RuntimeError):
