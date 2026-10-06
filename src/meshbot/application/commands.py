@@ -8,8 +8,8 @@ from meshbot.application.defense_civil import (
     DefenseCivilAmbiguousCityError,
     DefenseCivilCityNotFoundError,
     DefenseCivilService,
-    DefenseCivilServiceUnavailableError,
     DefenseCivilSettings,
+    DefenseCivilServiceUnavailableError,
 )
 from meshbot.application.moderation import ModerationService
 from meshbot.application.moderation_notifications import ModerationNotifier
@@ -282,13 +282,14 @@ class DefenseCivilCommand:
         ]
 
         for alert in visible_alerts:
-            for part in self._split_text(self._format_alert(alert)):
-                responses.append(
-                    OutgoingMessage(
-                        recipient_id=message.sender_id,
-                        text=part,
+            for field in self._format_alert(alert):
+                for part in self._split_text(field):
+                    responses.append(
+                        OutgoingMessage(
+                            recipient_id=message.sender_id,
+                            text=part,
+                        )
                     )
-                )
 
         remaining = len(alerts) - len(visible_alerts)
         if remaining:
@@ -301,7 +302,7 @@ class DefenseCivilCommand:
 
         return tuple(responses)
 
-    def _format_alert(self, alert: DefenseCivilAlert) -> str:
+    def _format_alert(self, alert: DefenseCivilAlert) -> tuple[str, ...]:
         fields = [" ".join((alert.headline or alert.event).split())]
         if self._settings.show_severity:
             fields.append(f"Severidade: {alert.severity}.")
@@ -313,7 +314,7 @@ class DefenseCivilCommand:
             fields.append(" ".join(alert.description.split()))
         if self._settings.show_instruction and alert.instruction:
             fields.append(" ".join(alert.instruction.split()))
-        return "\n".join(field for field in fields if field)
+        return tuple(field for field in fields if field)
 
     def _split_text(self, text: str) -> tuple[str, ...]:
         limit = self._settings.max_message_length
