@@ -1,6 +1,7 @@
 """Command-line interface for MeshBot."""
 
 from pathlib import Path
+from threading import Event
 
 from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.bot import MeshBot
@@ -22,6 +23,7 @@ from meshbot.application.defense_civil_delivery import (
     LocationDefenseCivilTargetResolver,
 )
 from meshbot.application.defense_civil_poller import DefenseCivilPoller
+from meshbot.application.defense_civil_state import DefenseCivilAlertEvent
 from meshbot.application.defense_civil_state import DefenseCivilStateService
 from meshbot.application.logging import configure_logging
 from meshbot.application.moderation import ModerationService
@@ -46,10 +48,10 @@ class DispatchingDefenseCivilPoller:
         self._poller = poller
         self._dispatcher = dispatcher
 
-    def run(self, stop_event) -> None:
+    def run(self, stop_event: Event) -> None:
         self._poller.run(stop_event)
 
-    def poll_once(self):
+    def poll_once(self) -> tuple[DefenseCivilAlertEvent, ...]:
         events = self._poller.poll_once()
         for event in events:
             self._dispatcher.dispatch(event)
