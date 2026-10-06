@@ -173,7 +173,7 @@ Ainda não existem:
 - confirmação persistente de entrega;
 - mecanismo transacional que garanta que um evento persistido será reenviado após uma falha de transmissão.
 
-Além disso, o timeout usado na composição da Defesa Civil atualmente vem de `weather_timeout_seconds`; isso deve ser separado antes de considerar a configuração completamente alinhada.
+O timeout da Defesa Civil é independente do timeout do serviço de tempo e ambos são definidos em suas respectivas seções.
 
 ## Transporte Meshtastic
 
@@ -198,7 +198,7 @@ A validação atual é unitária, com interfaces simuladas. **Ainda falta teste 
 
 ### Limitações conhecidas
 
-- `channel_name` é carregado na configuração, mas o transporte usa efetivamente `channel_index`.
+- o canal usado pelo transporte é definido explicitamente por `channel_index`; não há um campo de nome de canal sem efeito.
 - Não há descoberta automática de hardware.
 - Não há health endpoint.
 - A fila de entrada do transporte não possui limite explícito.
