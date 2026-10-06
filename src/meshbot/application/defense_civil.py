@@ -40,6 +40,10 @@ class DefenseCivilSettings:
     show_instruction: bool
     show_urgency: bool
     show_certainty: bool
+    automatic_enabled: bool = False
+    location: str = ""
+    recipient_id: str = "^all"
+    poll_interval_seconds: float = 300.0
 
 
 class DefenseCivilServiceError(RuntimeError):
