@@ -47,15 +47,7 @@ defense_civil_monitor = true
 
 
 # ------------------------------------------------------------
-# 2. AMBIENTE
-# ------------------------------------------------------------
-# development = testes no simulador
-# production  = uso normal
-environment = "development"
-
-
-# ------------------------------------------------------------
-# 3. IDENTIDADE DO BOT
+# 2. IDENTIDADE DO BOT
 # ------------------------------------------------------------
 # Nome mostrado pelo programa ao iniciar.
 name = "MeshBot"
@@ -66,16 +58,13 @@ command_prefix = "!"
 
 
 # ------------------------------------------------------------
-# 4. CONEXÃO COM A REDE
+# 3. CONEXÃO COM A REDE
 # ------------------------------------------------------------
 # simulator = simulador local, recomendado para testes
 # wifi      = Meshtastic via Wi-Fi
 # bluetooth = Meshtastic via Bluetooth
 # usb       = Meshtastic via USB
 transport = "simulator"
-
-# Nome do canal Meshtastic.
-channel_name = "LongFast"
 
 # Número do canal usado pelo bot.
 channel_index = 0
@@ -88,7 +77,7 @@ channel_index = 0
 
 
 # ------------------------------------------------------------
-# 5. ADMINISTRADORES
+# 4. ADMINISTRADORES
 # ------------------------------------------------------------
 # Coloque aqui os node IDs dos administradores.
 # Exemplo:
@@ -99,21 +88,21 @@ admins = []
 
 
 # ------------------------------------------------------------
-# 6. BANCO DE DADOS
+# 5. BANCO DE DADOS
 # ------------------------------------------------------------
 # Arquivo usado para guardar cadastro e moderação.
 database_path = "data/meshbot.db"
 
 
 # ------------------------------------------------------------
-# 7. MODERAÇÃO
+# 6. MODERAÇÃO
 # ------------------------------------------------------------
 # Tempo padrão de silenciamento, em minutos.
 default_silence_minutes = 30
 
 
 # ------------------------------------------------------------
-# 8. LOG
+# 7. LOG
 # ------------------------------------------------------------
 # DEBUG = mais detalhes para diagnóstico
 # INFO  = recomendado
@@ -123,7 +112,7 @@ log_level = "INFO"
 
 
 # ------------------------------------------------------------
-# 9. ENVIO DE MENSAGENS
+# 8. ENVIO DE MENSAGENS
 # ------------------------------------------------------------
 # Intervalo, em segundos, entre mensagens consecutivas.
 # Isso ajuda a evitar que uma resposta longa seja transmitida
@@ -133,7 +122,7 @@ message_delay_seconds = 5
 
 
 # ------------------------------------------------------------
-# 10. TEMPO
+# 9. TEMPO
 # ------------------------------------------------------------
 [weather]
 
@@ -164,9 +153,12 @@ automatic_enabled = false
 
 
 # ------------------------------------------------------------
-# 11. DEFESA CIVIL
+# 10. DEFESA CIVIL
 # ------------------------------------------------------------
 [defesa_civil]
+
+# Tempo máximo de espera pela consulta à Defesa Civil, em segundos.
+timeout_seconds = 30
 
 # Ativa a consulta de Defesa Civil.
 # Se false, !defesacivil não fará consultas.
