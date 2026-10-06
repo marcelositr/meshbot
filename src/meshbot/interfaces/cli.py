@@ -39,6 +39,23 @@ from meshbot.infrastructure.sqlite_defense_civil import SQLiteDefenseCivilAlertR
 from meshbot.infrastructure.sqlite_users import SQLiteUserRepository
 
 
+class DispatchingDefenseCivilPoller:
+    """Run the Defense Civil poller and dispatch lifecycle events."""
+
+    def __init__(self, poller: DefenseCivilPoller, dispatcher: DefenseCivilEventDispatcher) -> None:
+        self._poller = poller
+        self._dispatcher = dispatcher
+
+    def run(self, stop_event) -> None:
+        self._poller.run(stop_event)
+
+    def poll_once(self):
+        events = self._poller.poll_once()
+        for event in events:
+            self._dispatcher.dispatch(event)
+        return events
+
+
 def main() -> None:
     """Run the local simulator chat."""
     config_path = Path("config/config.toml")
@@ -92,15 +109,10 @@ def main() -> None:
             poll_interval_seconds=settings.defense_civil.poll_interval_seconds,
             sleep=None,
         )
-        original_poll_once = defense_civil_worker.poll_once
-
-        def poll_and_dispatch() -> tuple:
-            events = original_poll_once()
-            for event in events:
-                defense_dispatcher.dispatch(event)
-            return events
-
-        defense_civil_worker.poll_once = poll_and_dispatch  # type: ignore[method-assign]
+        defense_civil_worker = DispatchingDefenseCivilPoller(
+            defense_civil_worker,
+            defense_dispatcher,
+        )
 
     if settings.transport == "simulator":
         transport = SimulatorTransport(on_send=display_message)
