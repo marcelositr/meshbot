@@ -29,7 +29,7 @@ A regra desta documentação é simples: **o código atual é a fonte de verdade
 
 ## Escopo desta revisão
 
-A documentação foi reavaliada contra a árvore atual do projeto no commit `058fc8e4eab82babcaa6bc6` e, principalmente, contra a implementação atual de configuração, composição, transporte Meshtastic, runtime, simulador, serviços de tempo, Defesa Civil, persistência e testes.
+A documentação foi reavaliada contra a árvore atual do projeto no commit `058fc8e4eab82ff1ce27b8abfe1c24babcaa6bc6` e, principalmente, contra a implementação atual de configuração, composição, transporte Meshtastic, runtime, simulador, serviços de tempo, Defesa Civil, persistência e testes.
 
 O arquivo raiz `README.md` não faz parte desta revisão e não foi usado como fonte de conteúdo técnico.
 
