@@ -1,7 +1,11 @@
 from datetime import UTC, datetime
 
 from meshbot.application.defense_civil import DefenseCivilAlert
-from meshbot.application.defense_civil_state import DefenseCivilStateService
+from meshbot.application.defense_civil import DefenseCivilAlert
+from meshbot.application.defense_civil_state import (
+    DefenseCivilStateService,
+    StoredDefenseCivilAlert,
+)
 
 
 class MemoryRepository:
@@ -11,23 +15,15 @@ class MemoryRepository:
     def upsert(self, alert: DefenseCivilAlert, *, active: bool) -> None:
         self.items[alert.identifier] = (alert, active)
 
-    def get(self, identifier: str):
+    def get(self, identifier: str) -> StoredDefenseCivilAlert | None:
         item = self.items.get(identifier)
         if item is None:
             return None
-        return type("Stored", (), {
-            "alert": item[0],
-            "active": item[1],
-            "updated_at": datetime.now(UTC),
-        })()
+        return StoredDefenseCivilAlert(item[0], item[1], datetime.now(UTC))
 
-    def list_active(self):
+    def list_active(self) -> tuple[StoredDefenseCivilAlert, ...]:
         return tuple(
-            type("Stored", (), {
-                "alert": alert,
-                "active": active,
-                "updated_at": datetime.now(UTC),
-            })()
+            StoredDefenseCivilAlert(alert, active, datetime.now(UTC))
             for alert, active in self.items.values()
             if active
         )
@@ -82,7 +78,23 @@ def test_synchronize_updates_existing_alert() -> None:
     first = make_alert("alert-1")
     updated = make_alert("alert-1")
     updated = DefenseCivilAlert(
-        **{**updated.__dict__, "event": "Alerta atualizado"}
+        identifier=updated.identifier,
+        sender=updated.sender,
+        sent=updated.sent,
+        status=updated.status,
+        msg_type=updated.msg_type,
+        scope=updated.scope,
+        references=updated.references,
+        event="Alerta atualizado",
+        severity=updated.severity,
+        urgency=updated.urgency,
+        certainty=updated.certainty,
+        area=updated.area,
+        headline=updated.headline,
+        description=updated.description,
+        instruction=updated.instruction,
+        onset=updated.onset,
+        expires=updated.expires,
     )
 
     service.synchronize((first,))
