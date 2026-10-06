@@ -1,7 +1,7 @@
 """Command-line interface for MeshBot."""
 
-from threading import Event, Thread
 from pathlib import Path
+from threading import Event, Thread
 
 from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.bot import MeshBot
@@ -139,6 +139,7 @@ def main() -> None:
         print("          !12345678 !defesacivil Ituverava/SP")
         print("Digite 'exit' para sair.")
         assert isinstance(transport, SimulatorTransport)
+        workers = (defense_civil_worker,) if defense_civil_worker is not None else ()
         _run_simulator(transport, bot, workers)
         return
 
@@ -170,29 +171,27 @@ def _run_simulator(
 
     try:
         while True:
-    while True:
-        try:
-            line = input("> ").strip()
-        except (EOFError, KeyboardInterrupt):
-            print()
-            return
+            try:
+                line = input("> ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print()
+                return
 
-        if line.lower() == "exit":
-            return
+            if line.lower() == "exit":
+                return
 
-        if not line:
-            continue
+            if not line:
+                continue
 
-        try:
-            node_id, text = line.split(maxsplit=1)
-        except ValueError:
-            print("Formato inválido. Use: <node_id> <mensagem>")
-            continue
+            try:
+                node_id, text = line.split(maxsplit=1)
+            except ValueError:
+                print("Formato inválido. Use: <node_id> <mensagem>")
+                continue
 
             transport.inject_message(node_id, text)
             bot.process_next_message()
             transport.sent_messages.clear()
-
     finally:
         stop_event.set()
         for thread in threads:
