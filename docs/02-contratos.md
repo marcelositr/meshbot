@@ -1,141 +1,193 @@
-# Contratos e regras
+# Contratos e regras de comportamento
 
-## Identidade de nó
+## Mensagens
 
-Um node ID válido é ! seguido de 8 caracteres hexadecimais.
+`IncomingMessage` representa entrada:
 
-A normalização remove espaços externos e converte o hexadecimal para minúsculas.
+- `sender_id`;
+- `text`.
 
-## Nome amigável
+`OutgoingMessage` representa saída:
 
-A entrada de !nome é dado controlado.
+- `recipient_id`;
+- `text`.
 
-Regras atuais:
-
-- NFC;
-- espaços externos removidos;
-- espaços consecutivos reduzidos;
-- máximo de 24 caracteres;
-- letras Unicode;
-- acentos;
-- dígitos;
-- caixa preservada;
-- pontuação rejeitada;
-- símbolos rejeitados;
-- emojis rejeitados;
-- nomes compostos permitidos.
-
-Exemplos válidos: Ana, Ana Clara, João da Silva, José, MARIA, João2.
-
-Exemplos rejeitados: Marcelo 👍, Ana!, João@, Carlos_Silva.
-
-## Cadastro
-
-O comando é !registrar.
-
-A identidade vem do remetente. O usuário não fornece outro node ID.
-
-Fluxo:
-
-~~~text
-node desconhecido
-   |
-   +-- !registrar -> usuário criado
-   |
-   +-- outro comando -> instrução para registrar
-~~~
-
-## Autorização
-
-1. node inexistente -> rejeitado;
-2. !registrar é exceção;
-3. bloqueado -> rejeitado silenciosamente;
-4. silenciado -> rejeitado silenciosamente;
-5. usuário ativo -> permitido;
-6. administrador ativo -> permitido.
-
-A autorização ocorre antes da execução de comandos.
-
-## Administração
-
-admins define administradores iniciais.
-
-Na inicialização:
-
-- inexistente -> cria admin;
-- usuário comum -> eleva para admin;
-- nome e estado de moderação são preservados.
-
-Administradores não podem moderar administradores.
-
-## Moderação
-
-Comandos:
-
-- !bloquear node_id;
-- !desbloquear node_id;
-- !silenciar node_id [minutos].
-
-Regras:
-
-- somente admin;
-- alvo cadastrado;
-- admin não pode ser alvo;
-- duração positiva;
-- duração ausente usa padrão;
-- nome e demais propriedades são preservados.
-
-## Tempo
-
-!tempo exige localidade.
-
-O resolver aceita cidade ou cidade/UF, usa IBGE e diferencia ambiguidade, cidade inexistente e falha externa.
-
-## Defesa Civil
-
-!defesacivil cidade é consulta sob demanda.
-
-O processamento considera:
-
-- status Actual;
-- scope Public;
-- Alert;
-- Update;
-- Cancel;
-- referências;
-- expiração;
-- município/UF.
-
-O desaparecimento de um alerta numa consulta posterior não deve ser interpretado automaticamente como cancelamento. O feed é dinâmico.
+Ambos são imutáveis.
 
 ## Transporte
 
-IncomingMessage e OutgoingMessage são contratos internos.
+O contrato mínimo é:
 
-O adaptador futuro traduz:
+```python
+receive() -> IncomingMessage | None
+send(message: OutgoingMessage) -> None
+```
 
-~~~text
-Meshtastic -> IncomingMessage
-OutgoingMessage -> Meshtastic
-~~~
+O transporte não decide autorização, comandos ou formatação de negócio.
 
-O núcleo não deve carregar detalhes de USB, Bluetooth ou Wi-Fi.
+## Identidade
 
-## Limite de mensagem
+Node IDs válidos:
 
-A Defesa Civil usa atualmente 180 caracteres por mensagem.
+```text
+! + 8 caracteres hexadecimais
+```
 
-A fragmentação deve respeitar o limite, preferir cortes em palavras e dividir palavras excepcionais. Não pode alterar o significado do conteúdo oficial.
+Exemplo:
 
-Quando houver rádio real, o limite efetivo deve ser responsabilidade do adaptador/configuração do transporte.
+```text
+!12345678
+```
 
-## Contratos que não devem ser quebrados casualmente
+A normalização converte o ID para minúsculas.
 
-- identidade por node_id;
-- IncomingMessage e OutgoingMessage;
-- autorização antes dos comandos;
-- separação serviço/infraestrutura;
-- testes sem rede;
-- testes sem hardware;
-- proteção dos administradores;
-- validação de entrada.
+## Nome do usuário
+
+O nome:
+
+- é obrigatório quando definido;
+- tem máximo de 24 caracteres;
+- preserva caixa;
+- aceita letras Unicode;
+- aceita acentos;
+- aceita números;
+- aceita espaços;
+- normaliza Unicode NFC;
+- reduz espaços repetidos;
+- rejeita pontuação, símbolos e emojis.
+
+Nomes compostos são válidos.
+
+## Autorização
+
+Estados observados:
+
+```text
+não cadastrado
+bloqueado
+silenciado
+autorizado
+```
+
+Somente `!registrar` atravessa a exceção para usuário ainda não cadastrado.
+
+## Comandos básicos
+
+Sempre disponíveis:
+
+| Comando | Função |
+|---|---|
+| `!registrar` | cadastra o próprio node |
+| `!nome <nome>` | altera o próprio nome |
+| `!bloquear <node_id>` | bloqueia usuário, somente admin |
+| `!desbloquear <node_id>` | desbloqueia usuário, somente admin |
+| `!silenciar <node_id> [minutos]` | silencia usuário, somente admin |
+
+## Comandos opcionais
+
+| Feature | Comando |
+|---|---|
+| `ping` | `!ping` |
+| `weather_command` | `!tempo <cidade>` |
+| `defense_civil_command` | `!defesacivil <cidade>` |
+
+Quando a feature não está habilitada, o comando não é registrado no `CommandHandler`.
+
+## Moderação
+
+Regras:
+
+- somente admin pode moderar;
+- solicitante precisa estar cadastrado;
+- alvo precisa estar cadastrado;
+- admin não pode ser moderado;
+- duração de silêncio deve ser positiva;
+- duração omitida usa `default_silence_minutes`.
+
+## Respostas múltiplas
+
+Um comando pode retornar várias mensagens.
+
+O `MeshBot` envia a primeira imediatamente e aplica `message_delay_seconds` antes de cada resposta posterior.
+
+Isso é importante para rádio: o atraso não deve ser implementado novamente no comando nem na TUI.
+
+## Broadcast
+
+`^all` é o identificador de broadcast usado pela aplicação.
+
+No simulador, a TUI apresenta esse destino como:
+
+```text
+MeshBot → TODOS
+```
+
+Um node específico aparece como:
+
+```text
+MeshBot → !12345678
+```
+
+## Configuração de features
+
+Ausência de `[features]` significa todas as cinco features opcionais ligadas.
+
+A configuração explícita pode desligá-las individualmente.
+
+Dependências:
+
+- `weather.automatic_enabled = true` exige `features.weather_bulletin = true`;
+- `defesa_civil.automatic_enabled = true` exige `features.defense_civil_monitor = true`;
+- monitoramento automático da Defesa Civil também exige `defesa_civil.enabled = true` e uma localização.
+
+## Ambiente e transporte
+
+Transportes válidos:
+
+- `simulator`;
+- `wifi`;
+- `bluetooth`;
+- `usb`.
+
+O ambiente `development` exige `simulator`.
+
+Importante: a composição atual decide simulador ou Meshtastic pelo valor de `transport`, não por `environment`. Portanto, `environment = production` não substitui a configuração do transporte.
+
+## Canal
+
+`channel_index` é usado pelo transporte Meshtastic no envio.
+
+`channel_name` é carregado e documentado, mas não participa atualmente da seleção do canal no adaptador.
+
+## Defesa Civil
+
+O sistema trabalha com o identificador oficial do alerta e mantém o conteúdo CAP estruturado.
+
+A aplicação pode:
+
+- selecionar campos;
+- compactar espaços;
+- fragmentar por limite;
+- escolher destino;
+- adicionar cabeçalhos de transporte.
+
+Não deve alterar o significado do texto oficial.
+
+## Estado de alertas
+
+Eventos:
+
+- `new`;
+- `updated`;
+- `deactivated`.
+
+A mesma identificação com conteúdo diferente gera atualização.
+
+Alertas desaparecidos de um snapshot bem-sucedido são marcados como inativos.
+
+## Erros externos
+
+Falhas de IBGE, INMET ou CAP são convertidas em erros de serviço e, quando chegam ao comando, viram respostas curtas para o usuário.
+
+Detalhes técnicos ficam no log.
+
