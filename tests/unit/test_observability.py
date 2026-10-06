@@ -45,9 +45,8 @@ def test_bot_counts_failures_and_logs_exception(caplog) -> None:
     transport.incoming.append(IncomingMessage("!1", "!ping"))
     bot = MeshBot(transport, FailingCommands())
 
-    with caplog.at_level(logging.ERROR):
-        with suppress(RuntimeError):
-            bot.process_next_message()
+    with caplog.at_level(logging.ERROR), suppress(RuntimeError):
+        bot.process_next_message()
 
     assert bot.stats.failures == 1
     assert "Failed to process message from !1." in caplog.text
