@@ -96,6 +96,13 @@ morning_start = "06:00"
 afternoon_start = "12:00"
 night_start = "18:00"
 
+# Boletim automático do tempo: desligado por padrão.
+# Quando ativado, envia uma única mensagem por janela:
+# horário configurado até +1 minuto.
+automatic_enabled = false
+# location = "Ribeirão Preto/SP"
+# recipient_id = "^all"
+
 # ------------------------------------------------------------
 # DEFESA CIVIL
 # ------------------------------------------------------------
