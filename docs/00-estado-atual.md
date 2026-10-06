@@ -118,14 +118,13 @@ Ainda não existe camada Meshtastic real.
 
 ## Divergências que exigem correção futura
 
-1. transport aceita wifi/bluetooth/usb, mas não há implementações.
-2. production é aceito, mas não há runtime de produção.
-3. registration_requires_admin aparece no exemplo de configuração, mas não participa das regras atuais.
+1. transport aceita wifi/bluetooth/usb como preparação para o runtime de produção, mas essas implementações ainda não existem.
+2. production é aceito pela configuração, mas ainda não há runtime de produção.
 4. channel_name e channel_index são carregados, mas ainda não controlam rádio.
 5. weather_provider é configurável, mas a composição atual instancia diretamente INMET.
 6. log_level é validado, mas não há inicialização central de logging.
 7. Defesa Civil usa weather_timeout_seconds na composição da CLI; o timeout deve ser próprio.
-8. O README sugere transportes suportados que ainda não existem operacionalmente.
+8. A documentação distingue agora os transportes de produção planejados dos transportes atualmente disponíveis.
 
 ## Conclusão
 
