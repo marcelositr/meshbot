@@ -56,7 +56,12 @@ def test_synchronize_adds_new_alerts() -> None:
 
     service.synchronize((make_alert("alert-1"),))
 
+    events = service.synchronize((make_alert("alert-1"),))
+
     assert repository.items["alert-1"][1]
+    assert [(event.type, event.alert.identifier) for event in events] == [
+        ("new", "alert-1")
+    ]
 
 
 def test_synchronize_deactivates_alerts_missing_from_snapshot() -> None:
@@ -65,10 +70,13 @@ def test_synchronize_deactivates_alerts_missing_from_snapshot() -> None:
     repository.upsert(make_alert("alert-2"), active=True)
     service = DefenseCivilStateService(repository)
 
-    service.synchronize((make_alert("alert-1"),))
+    events = service.synchronize((make_alert("alert-1"),))
 
     assert repository.items["alert-1"][1]
     assert not repository.items["alert-2"][1]
+    assert [(event.type, event.alert.identifier) for event in events] == [
+        ("deactivated", "alert-2")
+    ]
 
 
 def test_synchronize_updates_existing_alert() -> None:
@@ -97,6 +105,9 @@ def test_synchronize_updates_existing_alert() -> None:
     )
 
     service.synchronize((first,))
-    service.synchronize((updated,))
+    events = service.synchronize((updated,))
 
     assert repository.items["alert-1"][0].event == "Alerta atualizado"
+    assert [(event.type, event.alert.identifier) for event in events] == [
+        ("updated", "alert-1")
+    ]
