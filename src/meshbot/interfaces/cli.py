@@ -15,9 +15,9 @@ from meshbot.application.commands import (
     TempoCommand,
     UnblockCommand,
 )
+from meshbot.application.logging import configure_logging
 from meshbot.application.moderation import ModerationService
 from meshbot.application.moderation_notifications import ModerationNotifier
-from meshbot.application.logging import configure_logging
 from meshbot.application.runtime import ProductionRuntime
 from meshbot.application.users import UserService
 from meshbot.config import ConfigurationError, load_settings
