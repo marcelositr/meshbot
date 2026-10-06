@@ -37,3 +37,7 @@ python_version = "3.13"
 strict = true
 packages = ["meshbot"]
 mypy_path = ["src"]
+
+[[tool.mypy.overrides]]
+module = ["meshtastic.*"]
+ignore_missing_imports = true
