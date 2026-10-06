@@ -15,6 +15,17 @@ class ConfigurationError(ValueError):
 
 
 @dataclass(frozen=True, slots=True)
+class FeatureSettings:
+    """Optional MeshBot features that can be enabled or disabled."""
+
+    ping: bool
+    weather_command: bool
+    weather_bulletin: bool
+    defense_civil_command: bool
+    defense_civil_monitor: bool
+
+
+@dataclass(frozen=True, slots=True)
 class Settings:
     """Validated settings used by the application."""
 
@@ -38,6 +49,7 @@ class Settings:
     weather_location: str
     weather_recipient_id: str
     defense_civil: DefenseCivilSettings
+    features: FeatureSettings
     log_level: str
 
 
@@ -90,6 +102,11 @@ def _build_settings(raw: dict[str, Any]) -> Settings:
         messaging = _required_table(raw, "messaging")
         weather = _required_table(raw, "weather")
         periods = _required_table(weather, "periods")
+        features_raw = raw.get("features", {})
+        if not isinstance(features_raw, dict):
+            raise ConfigurationError("features must be a table.")
+        features = _build_feature_settings(features_raw)
+
         defense_civil_raw = raw.get("defesa_civil", {})
         if not isinstance(defense_civil_raw, dict):
             raise ConfigurationError("defesa_civil must be a table.")
@@ -116,6 +133,7 @@ def _build_settings(raw: dict[str, Any]) -> Settings:
             weather_location=_optional_string_allow_empty(weather, "location", ""),
             weather_recipient_id=_optional_string(weather, "recipient_id", "^all"),
             defense_civil=defense_civil,
+            features=features,
             log_level=_required_string(raw, "log_level").upper(),
         )
     except KeyError as exc:
@@ -123,6 +141,16 @@ def _build_settings(raw: dict[str, Any]) -> Settings:
 
     _validate(settings)
     return settings
+
+
+def _build_feature_settings(raw: dict[str, Any]) -> FeatureSettings:
+    return FeatureSettings(
+        ping=_optional_bool(raw, "ping", True),
+        weather_command=_optional_bool(raw, "weather_command", True),
+        weather_bulletin=_optional_bool(raw, "weather_bulletin", True),
+        defense_civil_command=_optional_bool(raw, "defense_civil_command", True),
+        defense_civil_monitor=_optional_bool(raw, "defense_civil_monitor", True),
+    )
 
 
 def _build_defense_civil_settings(raw: dict[str, Any]) -> DefenseCivilSettings:
@@ -199,6 +227,14 @@ def _validate(settings: Settings) -> None:
             "defesa_civil.location is required when automatic_enabled is true."
         )
 
+    if (
+        settings.defense_civil.automatic_enabled
+        and not settings.features.defense_civil_monitor
+    ):
+        raise ConfigurationError(
+            "defesa_civil.automatic_enabled requires features.defense_civil_monitor."
+        )
+
     if settings.defense_civil.poll_interval_seconds <= 0:
         raise ConfigurationError("defesa_civil.poll_interval_seconds must be greater than zero.")
 
@@ -218,6 +254,11 @@ def _validate(settings: Settings) -> None:
     if settings.weather_automatic_enabled and not settings.weather_recipient_id:
         raise ConfigurationError(
             "weather.recipient_id is required when automatic_enabled is true."
+        )
+
+    if settings.weather_automatic_enabled and not settings.features.weather_bulletin:
+        raise ConfigurationError(
+            "weather.automatic_enabled requires features.weather_bulletin."
         )
 
     for name, value in (
