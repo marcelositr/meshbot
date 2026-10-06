@@ -8,8 +8,8 @@ from meshbot.application.defense_civil import (
     DefenseCivilAmbiguousCityError,
     DefenseCivilCityNotFoundError,
     DefenseCivilService,
-    DefenseCivilSettings,
     DefenseCivilServiceUnavailableError,
+    DefenseCivilSettings,
 )
 from meshbot.application.moderation import ModerationService
 from meshbot.application.moderation_notifications import ModerationNotifier
