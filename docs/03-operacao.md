@@ -108,7 +108,6 @@ Hoje o único provider implementado é INMET.
 Configura:
 
 - timeout do serviço de Defesa Civil;
-
 - habilitação da consulta;
 - modo;
 - quantidade máxima de alertas;
@@ -155,7 +154,6 @@ Quando o transporte não é `simulator`, a CLI cria `MeshtasticTransport` e `Pro
 Exemplo de configuração:
 
 ```toml
-environment = "production"
 transport = "usb"
 device = "/dev/ttyUSB0"
 channel_index = 0
