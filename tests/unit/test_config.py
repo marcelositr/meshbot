@@ -5,10 +5,8 @@ import pytest
 from meshbot.config import ConfigurationError, Settings, load_settings
 
 VALID_CONFIG = """
-environment = "development"
 name = "MeshBot"
 transport = "simulator"
-channel_name = "LongFast"
 channel_index = 0
 admins = ["!12345678"]
 default_silence_minutes = 30
@@ -43,6 +41,7 @@ def test_load_settings_returns_validated_settings(tmp_path: Path) -> None:
     assert settings.default_silence_minutes == 30
     assert settings.message_delay_seconds == 5
     assert settings.weather_provider == "inmet"
+    assert settings.defense_civil_timeout_seconds == 30
     assert settings.defense_civil.mode == "normal"
     assert settings.defense_civil.max_alerts == 5
     assert not settings.weather_automatic_enabled
@@ -154,15 +153,16 @@ show_instruction = false
     assert settings.defense_civil.show_urgency
 
 
-def test_development_cannot_use_real_transport(tmp_path: Path) -> None:
+def test_real_transport_is_allowed_without_environment_setting(tmp_path: Path) -> None:
     config = tmp_path / "config.toml"
     config.write_text(
         VALID_CONFIG.replace('transport = "simulator"', 'transport = "wifi"'),
         encoding="utf-8",
     )
 
-    with pytest.raises(ConfigurationError, match="must use the simulator"):
-        load_settings(config)
+    settings = load_settings(config)
+
+    assert settings.transport == "wifi"
 
 
 def test_invalid_silence_duration_is_rejected(tmp_path: Path) -> None:
@@ -173,6 +173,21 @@ def test_invalid_silence_duration_is_rejected(tmp_path: Path) -> None:
     )
 
     with pytest.raises(ConfigurationError, match="greater than zero"):
+        load_settings(config)
+
+
+def test_invalid_defense_civil_timeout_is_rejected(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        VALID_CONFIG
+        + """
+[defesa_civil]
+timeout_seconds = 0
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigurationError, match="defesa_civil.timeout_seconds"):
         load_settings(config)
 
 
