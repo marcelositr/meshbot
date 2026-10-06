@@ -33,7 +33,7 @@ class MemoryRepository:
             StoredDefenseCivilAlert(
                 alert=alert,
                 active=active,
-                updated_at=__import__("datetime").datetime.now(__import__("datetime").UTC),
+                updated_at=datetime.now(UTC),
             )
             for alert, active in self.items.values()
             if active
@@ -80,9 +80,11 @@ def test_poll_once_synchronizes_feed_snapshot() -> None:
         DefenseCivilStateService(repository),
     )
 
-    alerts = poller.poll_once()
+    events = poller.poll_once()
 
-    assert alerts == feed.alerts
+    assert len(events) == 1
+    assert events[0].type == "new"
+    assert events[0].alert == feed.alerts[0]
     assert feed.calls == 1
     assert repository.items["alert-1"][1]
 
