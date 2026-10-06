@@ -43,7 +43,7 @@ class DefenseCivilAlertService:
         self._resolver = resolver or IBGECityResolver(timeout_seconds)
 
     def get_alerts(self, location: str) -> tuple[DefenseCivilAlert, ...]:
-        """Resolve the municipality and return matching active alerts."""
+        """Resolve the municipality and return the current active alerts."""
         municipality = self._resolve(location)
 
         try:
@@ -55,24 +55,73 @@ class DefenseCivilAlertService:
                 "Defense Civil feed is unavailable."
             ) from exc
 
-        alerts: list[DefenseCivilAlert] = []
-        for info in root.iter():
-            if self._local_name(info.tag) != "info":
+        parsed_alerts: list[DefenseCivilAlert] = []
+        cancelled: set[str] = set()
+        superseded: set[str] = set()
+
+        for alert_element in root.iter():
+            if self._local_name(alert_element.tag) != "alert":
                 continue
 
-            alert = self._parse_info(info)
-            if alert is None:
+            identifier = self._find_text(alert_element, "identifier")
+            sender = self._find_text(alert_element, "sender")
+            sent = self._find_text(alert_element, "sent")
+            status = self._find_text(alert_element, "status")
+            msg_type = self._find_text(alert_element, "msgType")
+            references_text = self._find_text(
+                alert_element,
+                "references",
+                required=False,
+            )
+
+            if not identifier or not sender or not sent or not status or not msg_type:
+                continue
+            if status != "Actual":
                 continue
 
-            if (
-                self._is_active(alert.expires)
-                and self._matches_location(
-                    alert.area,
-                    municipality.name,
-                    municipality.uf,
+            references = self._parse_references(references_text)
+
+            if msg_type == "Cancel":
+                cancelled.update(references)
+                continue
+
+            if msg_type not in {"Alert", "Update"}:
+                continue
+
+            if msg_type == "Update":
+                superseded.update(references)
+
+            infos = [
+                child
+                for child in alert_element
+                if self._local_name(child.tag) == "info"
+            ]
+            for info in infos:
+                alert = self._parse_info(
+                    info=info,
+                    identifier=identifier,
+                    sender=sender,
+                    sent=sent,
+                    status=status,
+                    msg_type=msg_type,
+                    references=references,
                 )
+                if alert is not None:
+                    parsed_alerts.append(alert)
+
+        alerts: list[DefenseCivilAlert] = []
+        for alert in parsed_alerts:
+            if alert.identifier in cancelled or alert.identifier in superseded:
+                continue
+            if not self._is_active(alert.expires):
+                continue
+            if not self._matches_location(
+                alert.area,
+                municipality.name,
+                municipality.uf,
             ):
-                alerts.append(alert)
+                continue
+            alerts.append(alert)
 
         return tuple(alerts)
 
@@ -107,25 +156,61 @@ class DefenseCivilAlertService:
         return _normalize(city) in normalized_area and _normalize(uf) in normalized_area
 
     @classmethod
-    def _parse_info(cls, info: ET.Element) -> DefenseCivilAlert | None:
+    def _parse_info(
+        cls,
+        *,
+        info: ET.Element,
+        identifier: str,
+        sender: str,
+        sent: str,
+        status: str,
+        msg_type: str,
+        references: tuple[str, ...],
+    ) -> DefenseCivilAlert | None:
         event = cls._find_text(info, "event")
         severity = cls._find_text(info, "severity")
+        urgency = cls._find_text(info, "urgency")
+        certainty = cls._find_text(info, "certainty")
         area = cls._find_text(info, "areaDesc")
-        headline = cls._find_text(info, "headline")
-        description = cls._find_text(info, "description")
+        headline = cls._find_text(info, "headline", required=False)
+        description = cls._find_text(info, "description", required=False)
+        instruction = cls._find_text(info, "instruction", required=False)
+        onset = cls._find_text(info, "onset", required=False)
         expires = cls._find_text(info, "expires", required=False)
 
-        if not event or not severity or not area:
+        if not event or not severity or not urgency or not certainty or not area:
             return None
 
         return DefenseCivilAlert(
+            identifier=identifier,
+            sender=sender,
+            sent=sent,
+            status=status,
+            msg_type=msg_type,
+            references=references,
             event=event,
             severity=severity,
+            urgency=urgency,
+            certainty=certainty,
             area=area,
             headline=headline or "",
             description=description or "",
+            instruction=instruction or "",
+            onset=onset,
             expires=expires,
         )
+
+    @staticmethod
+    def _parse_references(value: str | None) -> tuple[str, ...]:
+        if not value:
+            return ()
+
+        identifiers: list[str] = []
+        for reference in value.split():
+            parts = reference.split(",", maxsplit=2)
+            if len(parts) == 3 and parts[1]:
+                identifiers.append(parts[1])
+        return tuple(identifiers)
 
     @classmethod
     def _find_text(
@@ -135,8 +220,8 @@ class DefenseCivilAlertService:
         *,
         required: bool = True,
     ) -> str | None:
-        for child in parent.iter():
-            if child is parent or cls._local_name(child.tag) != name:
+        for child in parent:
+            if cls._local_name(child.tag) != name:
                 continue
             text = "".join(child.itertext()).strip()
             if text:
