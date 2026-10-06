@@ -30,7 +30,6 @@ from meshbot.application.runtime import ProductionRuntime, RuntimeWorker
 from meshbot.application.users import UserService
 from meshbot.application.weather_bulletin import WeatherBulletinWorker
 from meshbot.config import ConfigurationError, load_settings
-from meshbot.domain.messages import OutgoingMessage
 from meshbot.domain.users import User, UserRole
 from meshbot.infrastructure.defense_civil import DefenseCivilAlertService
 from meshbot.infrastructure.inmet_weather import InmetWeatherService
