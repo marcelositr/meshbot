@@ -25,7 +25,7 @@ No estado atual:
 ## P0 — alinhamento da base
 
 ### Documentação
-**Estado: em atualização nesta revisão.**
+**Estado: concluído nesta revisão.**
 
 A documentação deve descrever o código real e separar claramente capacidade existente de trabalho futuro.
 
