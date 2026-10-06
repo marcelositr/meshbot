@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import curses
 import logging
-from contextlib import suppress
 import queue
 from collections import deque
 from collections.abc import Callable
+from contextlib import suppress
 from dataclasses import dataclass
 from datetime import datetime
 from threading import Event, Thread
