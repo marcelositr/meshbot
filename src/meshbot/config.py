@@ -128,8 +128,8 @@ def _build_settings(raw: dict[str, Any]) -> Settings:
             weather_automatic_enabled=_optional_bool(weather, "automatic_enabled", False),
             weather_location=_optional_string_allow_empty(weather, "location", ""),
             weather_recipient_id=_optional_string(weather, "recipient_id", "^all"),
-            defense_civil_timeout_seconds=_required_int(
-                defense_civil_raw, "timeout_seconds"
+            defense_civil_timeout_seconds=_optional_int(
+                defense_civil_raw, "timeout_seconds", 30
             ),
             defense_civil=defense_civil,
             features=features,
