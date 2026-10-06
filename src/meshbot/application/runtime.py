@@ -6,8 +6,6 @@ from collections.abc import Callable
 from threading import Event
 from typing import Protocol
 
-from meshbot.application.bot import MeshBot
-
 
 class BotRunner(Protocol):
     """Application contract for a continuously processed bot."""
