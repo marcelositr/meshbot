@@ -69,3 +69,30 @@ def test_rejects_non_positive_poll_interval() -> None:
             transport,
             poll_interval_seconds=0,
         )
+
+
+
+def test_worker_failure_requests_runtime_shutdown() -> None:
+    stop_event = Event()
+
+    class FailingWorker:
+        def run(self, event: Event) -> None:
+            assert event is stop_event
+            raise RuntimeError("worker boom")
+
+    class WaitingBot:
+        def process_next_message(self) -> bool:
+            return False
+
+    transport = FakeTransport()
+    runtime = ProductionRuntime(
+        WaitingBot(),
+        transport,
+        sleep=lambda _seconds: None,
+        workers=(FailingWorker(),),
+    )
+
+    runtime.run(stop_event)
+
+    assert stop_event.is_set()
+    assert transport.closed
