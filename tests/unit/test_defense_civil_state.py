@@ -1,7 +1,6 @@
 from datetime import UTC, datetime
 
 from meshbot.application.defense_civil import DefenseCivilAlert
-from meshbot.application.defense_civil import DefenseCivilAlert
 from meshbot.application.defense_civil_state import (
     DefenseCivilStateService,
     StoredDefenseCivilAlert,
