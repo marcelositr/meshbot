@@ -37,14 +37,13 @@ defense_civil_monitor = true
 
 Essas cinco opções são opcionais. Cadastro, nomes e moderação continuam sempre disponíveis.
 
-### Ambiente e transporte
+### Transporte
 
 ```toml
-environment = "development"
 transport = "simulator"
 ```
 
-Para desenvolvimento, os dois valores devem permanecer assim.
+Para desenvolvimento, use o simulador.
 
 Transportes Meshtastic disponíveis:
 
@@ -107,6 +106,8 @@ Hoje o único provider implementado é INMET.
 ### Defesa Civil
 
 Configura:
+
+- timeout do serviço de Defesa Civil;
 
 - habilitação da consulta;
 - modo;
