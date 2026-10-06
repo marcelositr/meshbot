@@ -127,6 +127,14 @@ IBGE, INMET e CAP podem falhar.
 
 Uma falha externa não deve derrubar o processo inteiro. O rádio recebe uma mensagem curta; o log preserva diagnóstico.
 
+## Gateway Defesa Civil
+
+O estado dos alertas é separado do cadastro de usuários e persistido em SQLite. Cada alerta é identificado pelo `identifier` oficial do CAP e mantém seu conteúdo, referências, expiração e estado ativo/inativo.
+
+A sincronização trabalha sobre um snapshot efetivo: alertas presentes são atualizados e marcados como ativos; alertas anteriormente ativos que desapareceram do snapshot são marcados como inativos. Isso prepara a aplicação para tratar atualização, cancelamento e expiração sem depender do comando `!defesacivil`.
+
+O gateway contínuo ainda precisa conectar essa camada a uma leitura periódica do feed e, posteriormente, à localização e transmissão automática.
+
 ## Futuro serviço contínuo
 
 O gateway deverá ter processo supervisionado, reinício, logs, health/status, métricas, backoff e estado persistente.
