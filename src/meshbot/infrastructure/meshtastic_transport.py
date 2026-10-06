@@ -62,10 +62,10 @@ class MeshtasticTransport:
         if close is not None:
             close()
 
-    def _on_connection_established(self, **_: Any) -> None:
+    def _on_connection_established(self, *_: Any, **__: Any) -> None:
         self._connected = True
 
-    def _on_connection_lost(self, **_: Any) -> None:
+    def _on_connection_lost(self, *_: Any, **__: Any) -> None:
         self._connected = False
 
     def _on_text(self, packet: dict[str, Any], **_: Any) -> None:
