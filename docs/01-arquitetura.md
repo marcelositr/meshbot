@@ -2,158 +2,272 @@
 
 ## Objetivo
 
-O MeshBot deve permanecer dividido em quatro zonas:
+Manter o núcleo independente de Meshtastic, HTTP, SQLite e terminal.
 
-~~~text
-Interfaces
-    |
-    v
-Application
-    |
-    v
-Domain
+A estrutura atual é:
 
-Infrastructure implementa portas e integrações externas.
-~~~
+```text
+src/meshbot/
+├── domain/
+├── application/
+├── infrastructure/
+└── interfaces/
+```
 
-A dependência deve apontar para dentro.
+A dependência conceitual aponta para dentro:
+
+```text
+interfaces
+    ↓
+application
+    ↓
+domain
+
+infrastructure implementa contratos usados pela application.
+```
 
 ## Domain
 
-Atualmente contém mensagens, usuário, papéis, validação de node ID, validação de nome e estado de silenciamento.
+Responsável por dados e regras pequenas e determinísticas.
 
-O domínio deve permanecer pequeno, determinístico e independente de infraestrutura.
+Atualmente:
+
+- mensagens;
+- usuário;
+- papéis;
+- validação de node ID;
+- normalização/validação de nome;
+- estado de silenciamento.
+
+O domínio não conhece Meshtastic, HTTP, TOML, SQLite ou curses.
 
 ## Application
 
-Contém autorização, orquestração, comandos, usuários, moderação, tempo, Defesa Civil e portas.
+Contém os casos de uso e políticas:
 
-A aplicação representa casos de uso e políticas.
+- `MeshBot`;
+- autorização;
+- usuários;
+- moderação;
+- comandos;
+- tempo;
+- boletim automático;
+- Defesa Civil;
+- estado de alertas;
+- entrega e polling;
+- runtime;
+- logging;
+- portas.
+
+A aplicação recebe dependências por construtores e protocolos sempre que uma fronteira externa precisa ser substituída em testes.
 
 ## Infrastructure
 
-Contém simulador, SQLite, IBGE, INMET, feed CAP e implementações fake.
+Implementa integrações externas:
 
-Dependências externas ficam aqui.
+- `SimulatorTransport`;
+- `MeshtasticTransport`;
+- SQLite de usuários;
+- SQLite de alertas;
+- IBGE;
+- INMET;
+- feed CAP da Defesa Civil;
+- fakes para testes.
 
 ## Interfaces
 
-A CLI é hoje o composition root.
+A CLI é o composition root.
 
-Quando existir transporte real, ele deve ser conectado aqui. O caso de uso não escolhe o transporte.
+Ela:
+
+1. carrega configuração;
+2. configura logging;
+3. inicializa repositórios;
+4. promove administradores configurados;
+5. cria serviços;
+6. cria workers opcionais;
+7. compõe comandos de acordo com `[features]`;
+8. cria o bot;
+9. escolhe simulador/TUI ou runtime de produção conforme o transporte configurado.
+
+O núcleo não escolhe seu próprio transporte.
 
 ## Fluxo de mensagem
 
-~~~text
+```text
 Transport
-   |
+   ↓
 IncomingMessage
-   |
+   ↓
 AuthorizationPolicy
-   |
+   ↓
 CommandHandler
-   |
+   ↓
 Command
-   |
-Application Service
-   |
-Infrastructure adapter
-   |
+   ↓
+Application service
+   ↓
 OutgoingMessage
-   |
+   ↓
 Transport
-~~~
+```
 
-Nenhum comando deve abrir banco ou chamar HTTP diretamente.
+O atraso entre respostas é responsabilidade do `MeshBot`, não do comando.
 
-## Fluxo de serviços
+## Fluxo de tempo
 
-Tempo:
-
-~~~text
+```text
 !tempo Cidade/UF
-      |
+      ↓
 TempoCommand
-      |
+      ↓
 WeatherService
-      |
-IBGE -> INMET
-~~~
+      ↓
+IBGECityResolver + INMET
+      ↓
+WeatherForecast
+      ↓
+OutgoingMessage[]
+```
 
-Defesa Civil atual:
+## Fluxo de Defesa Civil sob demanda
 
-~~~text
+```text
 !defesacivil Cidade/UF
-      |
+      ↓
 DefenseCivilCommand
-      |
-DefenseCivilService
-      |
+      ↓
+DefenseCivilAlertService
+      ↓
 IBGE + CAP/XML
-~~~
+      ↓
+DefenseCivilAlert[]
+      ↓
+formatação + fragmentação
+      ↓
+OutgoingMessage[]
+```
 
-Defesa Civil futura:
+## Fluxo automático de Defesa Civil
 
-~~~text
+```text
 CAP
- |
-Fetcher
- |
-Parser
- |
-Normalizer
- |
-Geographic Matcher
- |
-State Store
- |
-Deduplication/Event Engine
- |
-Formatter
- |
+ ↓
+DefenseCivilAlertService.get_all_alerts()
+ ↓
+DefenseCivilPoller
+ ↓
+DefenseCivilStateService
+ ↓
+new / updated / deactivated
+ ↓
+DefenseCivilEventDispatcher
+ ↓
+DefenseCivilDelivery
+ ↓
+formatter + localização textual
+ ↓
 MeshtasticTransport
-~~~
+```
 
-## Composition root
+O evento `deactivated` atualmente não transmite nada.
 
-A composição futura deve ser explícita:
+## Fluxo automático de tempo
 
-~~~text
-development -> SimulatorTransport
-production  -> MeshtasticTransport
-~~~
+```text
+relógio
+ ↓
+WeatherBulletinWorker
+ ↓
+WeatherService
+ ↓
+WeatherForecast
+ ↓
+OutgoingMessage
+ ↓
+Transport
+```
 
-O núcleo não pode saber qual transporte está em uso.
+Cada janela configurada gera no máximo um boletim por dia.
 
-## Portas futuras
+## Transporte Meshtastic
 
-Devem ser avaliadas para:
+O transporte real fica isolado atrás de `MessageTransport`.
 
-- transporte;
-- persistência de usuários;
-- relógio;
-- resolução de município;
-- previsão do tempo;
-- feed de alertas;
-- estado de alertas;
-- localização;
-- observabilidade.
+A biblioteca Meshtastic é usada somente em `infrastructure/meshtastic_transport.py`.
 
-Uma porta deve existir quando uma dependência externa ameaça a testabilidade ou a reutilização do caso de uso.
+O restante da aplicação trabalha apenas com:
 
-## O que não fazer
+- `IncomingMessage`;
+- `OutgoingMessage`;
+- `MessageTransport`.
 
-Não colocar HTTP ou SQL no domínio. Não colocar código Meshtastic no MeshBot. Não colocar regras de autorização no simulador. Não colocar CAP na CLI.
+Isso permite testar a aplicação sem rádio.
 
-Também não criar abstrações apenas por estética. A abstração precisa proteger uma fronteira real.
+## Reconexão
 
-## Perguntas obrigatórias antes de uma nova feature
+A perda de conexão inicia um thread de reconexão dedicado.
 
-1. Qual é o caso de uso?
-2. Qual regra pertence ao domínio?
-3. Qual dependência é externa?
-4. Qual porta a isola?
-5. Como testar sem hardware e rede?
-6. Qual comportamento de falha existe?
-7. Como a configuração controla o comportamento?
-8. Como o operador saberá que está funcionando?
+O transporte:
+
+1. marca-se desconectado;
+2. espera o atraso inicial;
+3. fecha a interface antiga;
+4. cria uma nova interface;
+5. aguarda confirmação de conexão;
+6. aumenta o atraso em caso de falha;
+7. limita o atraso máximo;
+8. repete até reconectar ou ser fechado.
+
+## Persistência
+
+Há duas áreas SQLite separadas logicamente dentro do mesmo arquivo configurado:
+
+- `users`;
+- `defense_civil_alerts`.
+
+A tabela de alertas não deve ser confundida com usuários.
+
+Cada chamada ao repositório abre sua própria conexão SQLite.
+
+## Composition root e configuração
+
+A composição não usa uma fábrica genérica de plugins. Os recursos são simples o suficiente para permanecer explícitos.
+
+Os toggles opcionais são aplicados na CLI:
+
+```text
+features.ping
+features.weather_command
+features.weather_bulletin
+features.defense_civil_command
+features.defense_civil_monitor
+```
+
+Isso evita registrar comandos ou workers desnecessários.
+
+## Fronteiras ainda desejáveis
+
+Não são tarefas automáticas; devem ser criadas somente quando houver necessidade real:
+
+- relógio injetável onde testes temporais ficarem difíceis;
+- timeout específico da Defesa Civil;
+- localização/GPS;
+- geometria CAP;
+- outbox de transmissão;
+- health/status;
+- métricas externas.
+
+Não criar uma abstração apenas porque ela parece arquiteturalmente elegante.
+
+## Regras arquiteturais
+
+- HTTP não entra no domínio.
+- SQL não entra no domínio.
+- Meshtastic não entra no domínio.
+- curses não entra na aplicação.
+- regras de autorização não ficam no simulador.
+- CAP não fica na CLI.
+- comandos não abrem banco diretamente.
+- integrações externas devem ser testáveis sem depender da rede real.
+
