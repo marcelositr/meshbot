@@ -45,7 +45,7 @@ The simulator accepts messages such as:
 !12345678 !defesacivil Ituverava/SP
 ```
 
-The `!tempo` command resolves municipalities through IBGE and accepts `Cidade/UF` for ambiguous names.
+The `!tempo` command resolves municipalities through IBGE and accepts `Cidade/UF` for ambiguous names. Manual weather queries are sent privately to the requester. The weather service can also publish an automatic bulletin at the configured morning, afternoon, and night times; each bulletin is sent once during the configured minute plus a one-minute tolerance and uses the configured `weather.location` and `weather.recipient_id`. Automatic weather bulletins are disabled by default.
 
 The `!defesacivil` command queries the official Defense Civil public alert feed for a municipality and reports the current active alerts. It is a read-only, on-demand query: each request is independent, and a previous response never suppresses a later query. CAP `Actual` alerts are considered, while `Update` and `Cancel` references are applied to the current feed before the response is built. Expired alerts are ignored. The response can be adapted through `defesa_civil.mode` (`normal`, `attention`, or `emergency`) and optional `show_*`, `max_alerts`, and `max_message_length` settings. The bot can also synchronize the official feed continuously and transmit only new or updated alerts matching the configured municipality. Automatic transmission is disabled by default and should be tested with the simulator before using a real radio.
 
@@ -70,7 +70,7 @@ mypy
 
 Copy `config/config.example.toml` to `config/config.toml` and edit the documented settings.
 
-The message interval and the morning/afternoon/night weather period boundaries are configurable so each network can choose its own operating behavior. Defense Civil presentation is also configurable so a network can keep responses compact in normal periods and expose more official alert context during attention or emergency periods.
+The message interval and the morning/afternoon/night weather period boundaries are configurable so each network can choose its own operating behavior. Automatic weather bulletins can be enabled separately with `weather.automatic_enabled`, `weather.location`, and `weather.recipient_id`; when enabled, the worker sends one compact bulletin in each configured one-minute window and does not send a missed bulletin after the window has passed. Defense Civil presentation is also configurable so a network can keep responses compact in normal periods and expose more official alert context during attention or emergency periods.
 
 The `admins` setting defines the initial administrators. Administrative rules are enforced by the application and are not configurable.
 
