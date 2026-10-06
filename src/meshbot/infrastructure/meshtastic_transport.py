@@ -136,12 +136,13 @@ class MeshtasticTransport:
                         new_interface = self._create_interface(
                             self._transport, self._device, self._interface_factory
                         )
-                    if self._closed:
-                        close = getattr(new_interface, "close", None)
-                        if close is not None:
-                            close()
-                        return
-                    self._interface = new_interface
+                    with self._interface_lock:
+                        if self._closed:
+                            close = getattr(new_interface, "close", None)
+                            if close is not None:
+                                close()
+                            return
+                        self._interface = new_interface
                     logger.info("Meshtastic interface recreated; waiting for connection.")
                 except Exception:
                     logger.exception(
