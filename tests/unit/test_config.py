@@ -46,6 +46,74 @@ def test_load_settings_returns_validated_settings(tmp_path: Path) -> None:
     assert settings.defense_civil.mode == "normal"
     assert settings.defense_civil.max_alerts == 5
     assert not settings.weather_automatic_enabled
+    assert settings.features.ping
+    assert settings.features.weather_command
+    assert settings.features.weather_bulletin
+    assert settings.features.defense_civil_command
+    assert settings.features.defense_civil_monitor
+
+
+def test_feature_settings_can_disable_optional_features(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        VALID_CONFIG
+        + """
+[features]
+ping = false
+weather_command = false
+weather_bulletin = false
+defense_civil_command = false
+defense_civil_monitor = false
+""",
+        encoding="utf-8",
+    )
+
+    settings = load_settings(config)
+
+    assert not settings.features.ping
+    assert not settings.features.weather_command
+    assert not settings.features.weather_bulletin
+    assert not settings.features.defense_civil_command
+    assert not settings.features.defense_civil_monitor
+
+
+def test_automatic_weather_requires_weather_bulletin_feature(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        VALID_CONFIG
+        + """
+[features]
+weather_bulletin = false
+
+[weather]
+automatic_enabled = true
+location = "Ribeirão Preto/SP"
+recipient_id = "^all"
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigurationError, match="features.weather_bulletin"):
+        load_settings(config)
+
+
+def test_automatic_defense_civil_requires_monitor_feature(tmp_path: Path) -> None:
+    config = tmp_path / "config.toml"
+    config.write_text(
+        VALID_CONFIG
+        + """
+[features]
+defense_civil_monitor = false
+
+[defesa_civil]
+automatic_enabled = true
+location = "Ribeirão Preto/SP"
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ConfigurationError, match="features.defense_civil_monitor"):
+        load_settings(config)
 
 
 def test_defense_civil_mode_changes_default_presentation(tmp_path: Path) -> None:
@@ -130,7 +198,8 @@ def test_optional_device_is_loaded(tmp_path: Path) -> None:
     config.write_text(
         VALID_CONFIG.replace(
             'admins = ["!12345678"]',
-            'admins = ["!12345678"]\ndevice = "/dev/ttyUSB0"',
+            'admins = ["!12345678"]
+device = "/dev/ttyUSB0"',
         ),
         encoding="utf-8",
     )
@@ -143,7 +212,8 @@ def test_optional_device_is_loaded(tmp_path: Path) -> None:
 def test_empty_optional_device_becomes_none(tmp_path: Path) -> None:
     config = tmp_path / "config.toml"
     config.write_text(
-        VALID_CONFIG.replace("admins = [\"!12345678\"]", "admins = [\"!12345678\"]\ndevice = \"\""),
+        VALID_CONFIG.replace('admins = ["!12345678"]', 'admins = ["!12345678"]
+device = ""'),
         encoding="utf-8",
     )
 
@@ -185,13 +255,13 @@ automatic_enabled = true
         load_settings(config)
 
 
-
 def test_automatic_weather_requires_location(tmp_path: Path) -> None:
     config = tmp_path / "config.toml"
     config.write_text(
         VALID_CONFIG.replace(
             'timeout_seconds = 30',
-            'timeout_seconds = 30\nautomatic_enabled = true',
+            'timeout_seconds = 30
+automatic_enabled = true',
         ),
         encoding="utf-8",
     )
@@ -205,8 +275,11 @@ def test_automatic_weather_settings_are_loaded(tmp_path: Path) -> None:
     config.write_text(
         VALID_CONFIG.replace(
             'timeout_seconds = 30',
-            'timeout_seconds = 30\nautomatic_enabled = true\n'
-            'location = "Ribeirão Preto/SP"\nrecipient_id = "^all"',
+            'timeout_seconds = 30
+automatic_enabled = true
+'
+            'location = "Ribeirão Preto/SP"
+recipient_id = "^all"',
         ),
         encoding="utf-8",
     )
