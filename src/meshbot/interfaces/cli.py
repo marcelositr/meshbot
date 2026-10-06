@@ -7,6 +7,7 @@ from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.bot import MeshBot
 from meshbot.application.commands import (
     BlockCommand,
+    Command,
     CommandHandler,
     DefenseCivilCommand,
     NameCommand,
@@ -127,7 +128,7 @@ def main() -> None:
         )
 
     user_service = UserService(user_repository)
-    commands = [
+    commands: list[Command] = [
         RegisterCommand(user_service),
         NameCommand(user_service),
         BlockCommand(moderation_service, moderation_notifier),
