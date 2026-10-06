@@ -45,15 +45,20 @@ class DefenseCivilAlertService:
     def get_alerts(self, location: str) -> tuple[DefenseCivilAlert, ...]:
         """Resolve the municipality and return the current active alerts."""
         municipality = self._resolve(location)
+        alerts = self.get_all_alerts()
+        return tuple(
+            alert
+            for alert in alerts
+            if self._matches_location(
+                alert.area,
+                municipality.name,
+                municipality.uf,
+            )
+        )
 
-        try:
-            response = requests.get(URL, timeout=self._timeout_seconds)
-            response.raise_for_status()
-            root = ET.fromstring(response.content)
-        except (requests.RequestException, ET.ParseError) as exc:
-            raise DefenseCivilServiceUnavailableError(
-                "Defense Civil feed is unavailable."
-            ) from exc
+    def get_all_alerts(self) -> tuple[DefenseCivilAlert, ...]:
+        """Return all current active alerts from the official CAP feed."""
+        root = self._fetch_feed()
 
         parsed_alerts: list[DefenseCivilAlert] = []
         cancelled: set[str] = set()
@@ -111,21 +116,23 @@ class DefenseCivilAlertService:
                 if alert is not None:
                     parsed_alerts.append(alert)
 
-        alerts: list[DefenseCivilAlert] = []
-        for alert in parsed_alerts:
-            if alert.identifier in cancelled or alert.identifier in superseded:
-                continue
-            if not self._is_active(alert.expires):
-                continue
-            if not self._matches_location(
-                alert.area,
-                municipality.name,
-                municipality.uf,
-            ):
-                continue
-            alerts.append(alert)
+        return tuple(
+            alert
+            for alert in parsed_alerts
+            if alert.identifier not in cancelled
+            and alert.identifier not in superseded
+            and self._is_active(alert.expires)
+        )
 
-        return tuple(alerts)
+    def _fetch_feed(self) -> ET.Element:
+        try:
+            response = requests.get(URL, timeout=self._timeout_seconds)
+            response.raise_for_status()
+            return ET.fromstring(response.content)
+        except (requests.RequestException, ET.ParseError) as exc:
+            raise DefenseCivilServiceUnavailableError(
+                "Defense Civil feed is unavailable."
+            ) from exc
 
     def _resolve(self, location: str) -> Municipality:
         try:
