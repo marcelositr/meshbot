@@ -85,7 +85,7 @@ def main() -> None:
             device=settings.device,
         )
     defense_civil_worker = None
-    if settings.defense_civil.automatic_enabled and settings.transport != "simulator":
+    if settings.defense_civil.automatic_enabled:
         defense_repository = SQLiteDefenseCivilAlertRepository(Path(settings.database_path))
         defense_state = DefenseCivilStateService(defense_repository)
         defense_delivery = DefenseCivilDelivery(
