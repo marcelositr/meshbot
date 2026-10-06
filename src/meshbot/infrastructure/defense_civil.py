@@ -69,6 +69,7 @@ class DefenseCivilAlertService:
             status = self._find_text(alert_element, "status")
             msg_type = self._find_text(alert_element, "msgType")
             scope = self._find_text(alert_element, "scope")
+            scope = self._find_text(alert_element, "scope")
             references_text = self._find_text(
                 alert_element,
                 "references",
