@@ -159,6 +159,62 @@ def test_close_during_reconnect_closes_new_interface() -> None:
     assert second.closed
 
 
+def test_send_waits_for_reconnect_interface_lock() -> None:
+    from threading import Event, Thread
+
+    pub = FakePubSub()
+    first = FakeInterface()
+    second = FakeInterface()
+    send_started = Event()
+    release_send = Event()
+    reconnect_created = Event()
+    interfaces = iter([first, second])
+
+    class BlockingInterface(FakeInterface):
+        def sendText(self, text: str, **kwargs: Any) -> None:
+            send_started.set()
+            assert release_send.wait(1)
+            super().sendText(text, **kwargs)
+
+    first_blocking = BlockingInterface()
+
+    def factory(_transport: str, _device: str | None) -> FakeInterface:
+        interface = next(interfaces)
+        if interface is first:
+            return first_blocking
+        reconnect_created.set()
+        return interface
+
+    transport = MeshtasticTransport(
+        "usb",
+        interface_factory=factory,
+        pubsub_module=pub,
+        reconnect_initial_delay=0,
+        reconnect_max_delay=1,
+    )
+
+    pub.emit("meshtastic.connection.established")
+
+    sender = Thread(
+        target=transport.send,
+        args=(OutgoingMessage("!12345678", "pong"),),
+    )
+    sender.start()
+    assert send_started.wait(1)
+
+    pub.emit("meshtastic.connection.lost")
+    assert reconnect_created.wait(0.1) is False
+
+    release_send.set()
+    sender.join(timeout=1)
+    assert not sender.is_alive()
+    assert reconnect_created.wait(1)
+    assert first_blocking.closed
+    assert not second.closed
+
+    transport.close()
+
+
 def test_connection_established_during_interface_creation_is_not_lost() -> None:
     from threading import Event
 
