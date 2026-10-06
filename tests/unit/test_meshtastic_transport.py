@@ -16,8 +16,8 @@ class FakePubSub:
     def unsubscribe(self, callback: Any, topic: str) -> None:
         assert self.callbacks.pop(topic) == callback
 
-    def emit(self, topic: str, packet: dict[str, Any]) -> None:
-        self.callbacks[topic](packet)
+    def emit(self, topic: str, packet: dict[str, Any] | None = None) -> None:
+        self.callbacks[topic](packet or {})
 
 
 class FakeInterface:
@@ -30,6 +30,24 @@ class FakeInterface:
 
     def close(self) -> None:
         self.closed = True
+
+
+def test_connection_lifecycle_tracks_established_and_lost() -> None:
+    pub = FakePubSub()
+    interface = FakeInterface()
+    transport = MeshtasticTransport(
+        "usb",
+        interface_factory=lambda _transport, _device: interface,
+        pubsub_module=pub,
+    )
+
+    assert not transport.is_connected
+
+    pub.emit("meshtastic.connection.established")
+    assert transport.is_connected
+
+    pub.emit("meshtastic.connection.lost")
+    assert not transport.is_connected
 
 
 def test_receive_converts_meshtastic_text_packet() -> None:
@@ -97,5 +115,6 @@ def test_close_unsubscribes_and_closes_interface() -> None:
 
     transport.close()
 
+    assert not transport.is_connected
     assert interface.closed
     assert pub.callbacks == {}
