@@ -12,6 +12,7 @@ license = { file = "LICENSE" }
 authors = [{ name = "Marcelo Trindade" }]
 dependencies = [
     "requests>=2.32",
+    "meshtastic>=2.7,<3",
 ]
 
 [project.optional-dependencies]
