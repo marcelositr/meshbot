@@ -4,10 +4,12 @@ import logging
 from typing import Protocol
 
 from meshbot.application.defense_civil import (
+    DefenseCivilAlert,
     DefenseCivilAmbiguousCityError,
     DefenseCivilCityNotFoundError,
     DefenseCivilService,
     DefenseCivilServiceUnavailableError,
+    DefenseCivilSettings,
 )
 from meshbot.application.moderation import ModerationService
 from meshbot.application.moderation_notifications import ModerationNotifier
@@ -222,7 +224,11 @@ class DefenseCivilCommand:
                 ),
             )
 
-        logger.info("Defense Civil query: sender=%s location=%s", message.sender_id, location)
+        logger.info(
+            "Defense Civil query: sender=%s location=%s",
+            message.sender_id,
+            location,
+        )
         try:
             alerts = self._service.get_alerts(location)
         except DefenseCivilCityNotFoundError:
@@ -240,7 +246,11 @@ class DefenseCivilCommand:
                 ),
             )
         except DefenseCivilServiceUnavailableError:
-            logger.warning("Defense Civil query failed: sender=%s location=%s", message.sender_id, location)
+            logger.warning(
+                "Defense Civil query failed: sender=%s location=%s",
+                message.sender_id,
+                location,
+            )
             return (
                 OutgoingMessage(
                     recipient_id=message.sender_id,
@@ -249,13 +259,20 @@ class DefenseCivilCommand:
             )
 
         if not alerts:
-            logger.info("Defense Civil query returned no active alerts: location=%s", location)
+            logger.info(
+                "Defense Civil query returned no active alerts: location=%s",
+                location,
+            )
             return self._messages(
                 message,
                 ("⚠️ ALERTAS DEFESA CIVIL", "Nenhum alerta ativo."),
             )
 
-        logger.info("Defense Civil query returned %d active alerts: location=%s", len(alerts), location)
+        logger.info(
+            "Defense Civil query returned %d active alerts: location=%s",
+            len(alerts),
+            location,
+        )
         visible_alerts = alerts[: self._settings.max_alerts]
         responses: list[OutgoingMessage] = [
             OutgoingMessage(
