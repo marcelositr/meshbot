@@ -125,7 +125,11 @@ def test_defense_civil_does_not_deduplicate_new_queries() -> None:
         IncomingMessage(sender_id="!87654321", text="!defesacivil Ituverava/SP")
     )
 
-    assert first == second
+    assert tuple(message.text for message in first) == tuple(
+        message.text for message in second
+    )
+    assert first[0].recipient_id == "!12345678"
+    assert second[0].recipient_id == "!87654321"
     assert len(second) == 3
 
 
