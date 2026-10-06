@@ -23,6 +23,7 @@ class Settings:
     transport: str
     channel_name: str
     channel_index: int
+    device: str | None
     admins: tuple[str, ...]
     database_path: str
     default_silence_minutes: int
