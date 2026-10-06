@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from meshbot.application.defense_civil import DefenseCivilAlert
+from meshbot.application.defense_civil_state import DefenseCivilAlertEvent
 from meshbot.domain.messages import OutgoingMessage
 
 
@@ -102,7 +103,7 @@ class LocationDefenseCivilTargetResolver:
 
 
 class DefenseCivilDelivery:
-    """Turn lifecycle events into targeted outgoing messages."""
+    """Turn one alert into targeted outgoing messages."""
 
     def __init__(
         self,
@@ -124,3 +125,22 @@ class DefenseCivilDelivery:
             OutgoingMessage(recipient_id=self._recipient_id, text=text)
             for text in self._formatter.format(alert)
         )
+
+
+class DefenseCivilEventDispatcher:
+    """Deliver only new or changed alerts from lifecycle events."""
+
+    def __init__(
+        self,
+        delivery: DefenseCivilDelivery,
+        send: Protocol,
+    ) -> None:
+        self._delivery = delivery
+        self._send = send
+
+    def dispatch(self, event: DefenseCivilAlertEvent) -> None:
+        """Deliver a new or updated alert; ignore deactivation events."""
+        if event.type == "deactivated":
+            return
+        for message in self._delivery.deliver(event.alert):
+            self._send.send(message)
