@@ -1,51 +1,59 @@
-# MeshBot — Documentação Técnica
+# MeshBot — documentação técnica
 
-## Propósito
+## Objetivo
 
-O MeshBot é uma aplicação modular para operar serviços sobre redes Meshtastic sem acoplar a lógica de negócio ao transporte de rádio.
+Esta pasta documenta o comportamento real do MeshBot, sua arquitetura, configuração, operação, qualidade, Defesa Civil e próximos passos.
 
-O projeto já possui um núcleo funcional para processamento de mensagens, usuários, autorização, moderação, persistência SQLite, previsão do tempo, consulta de Defesa Civil, simulador e testes.
-
-Esta documentação registra o estado real do sistema, seus contratos, suas decisões arquiteturais e o trabalho futuro necessário.
+A regra desta documentação é simples: **o código atual é a fonte de verdade**. Roadmap e decisões futuras ficam explicitamente marcados como futuros; uma configuração ou uma intenção não é tratada como capacidade implementada.
 
 ## Documentos
 
-- 00-estado-atual.md — inventário real do sistema e lacunas.
-- 01-arquitetura.md — limites entre domínio, aplicação, infraestrutura e interfaces.
-- 02-contratos.md — regras de identidade, usuários, autorização, comandos e mensagens.
-- 03-operacao.md — configuração e operação.
-- 04-qualidade.md — testes, lint, tipagem e critérios de aceite.
-- 05-defesa-civil.md — consulta atual e direção do gateway contínuo.
-- 06-roadmap.md — prioridades, governança e cobrança futura.
+- `00-estado-atual.md` — inventário do que realmente existe hoje, incluindo limitações conhecidas.
+- `01-arquitetura.md` — camadas, contratos, composição e fluxos.
+- `02-contratos.md` — mensagens, usuários, autorização, comandos, transporte e regras de configuração.
+- `03-operacao.md` — instalação, configuração, simulador e operação real.
+- `04-qualidade.md` — testes, lint, tipagem e critérios de conclusão.
+- `05-defesa-civil.md` — consulta sob demanda, gateway automático e lacunas restantes.
+- `06-roadmap.md` — ordem de evolução do projeto e itens futuros.
 
-## Princípios de liderança técnica
+## Princípios
 
-### Código real vence intenção
+1. **Código real vence intenção.**
+2. **Integrações externas ficam atrás de fronteiras testáveis.**
+3. **O núcleo não depende do hardware Meshtastic.**
+4. **Mensagens de rádio devem ser compactas e previsíveis.**
+5. **Texto oficial de Defesa Civil não deve ser reinterpretado ou resumido.**
+6. **Configuração deve controlar somente capacidades que realmente existem.**
+7. **Toda mudança relevante deve trazer código, testes e documentação coerentes.**
+8. **O projeto não deve crescer em complexidade antes de operar o básico de forma confiável.**
 
-README, configuração e documentação devem ser derivados da implementação. Uma opção de configuração não constitui uma funcionalidade.
+## Escopo desta revisão
 
-### Toda integração externa deve ter uma fronteira
+A documentação foi reavaliada contra a árvore atual do projeto no commit `058fc8e4eab82babcaa6bc6` e, principalmente, contra a implementação atual de configuração, composição, transporte Meshtastic, runtime, simulador, serviços de tempo, Defesa Civil, persistência e testes.
 
-O domínio não deve conhecer SQLite, requests, Meshtastic, XML, TOML ou terminal.
+O arquivo raiz `README.md` não faz parte desta revisão e não foi usado como fonte de conteúdo técnico.
 
-### Rede LoRa é recurso escasso
+## Estado geral
 
-Mensagens devem ser compactas, previsíveis e justificadas. O bot não deve gerar tráfego periódico sem motivo.
+O projeto já possui:
 
-### Informação oficial não deve ser reinterpretada
+- núcleo de mensagens e comandos;
+- cadastro, nomes, autorização e moderação;
+- SQLite para usuários;
+- consulta de tempo via IBGE/INMET;
+- consulta de Defesa Civil via CAP;
+- estado persistente de alertas;
+- monitoramento automático de Defesa Civil;
+- boletim automático de tempo;
+- transporte Meshtastic para USB, Wi-Fi e Bluetooth;
+- reconexão automática do transporte;
+- runtime de produção;
+- simulador com TUI;
+- testes automatizados, Ruff e mypy strict.
 
-Alertas da Defesa Civil podem ser formatados e transportados, mas não resumidos ou inventados.
+A principal etapa externa que ainda falta é **validar fisicamente o transporte Meshtastic com hardware real**. Depois disso, o roadmap deve seguir pelos refinamentos operacionais que ainda faltam.
 
-### Segurança vem antes de conveniência
+## Regra para manutenção
 
-Autorização, moderação, identificação e limites de entrada são parte do produto.
+Quando uma mudança alterar comportamento, configuração, arquitetura, testes ou estado do roadmap, atualizar os documentos afetados no mesmo ciclo.
 
-### Toda capacidade nasce com teste
-
-Uma funcionalidade só é concluída quando possui comportamento verificável e documentação correspondente.
-
-## Referência
-
-Esta documentação descreve a árvore main no commit c7a61f8f737bffca3a24873c0389db46e964b4e4 e incorpora as decisões consolidadas durante a análise do projeto e do gateway de Defesa Civil de referência.
-
-Alterações arquiteturais futuras devem atualizar a documentação no mesmo ciclo da mudança.
