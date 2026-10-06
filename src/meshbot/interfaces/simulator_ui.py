@@ -286,8 +286,13 @@ class SimulatorChatUI:
                 for index in range(0, len(entry.text), available)
             ] or [""]
             lines.extend(
-                [(prefix if index == 0 else " " * len(prefix)) + chunk, color]
-                for index, chunk in enumerate(chunks)
+                [
+                    (
+                        (prefix if index == 0 else " " * len(prefix)) + chunk,
+                        color,
+                    )
+                    for index, chunk in enumerate(chunks)
+                ]
             )
 
         visible = lines[-usable:]
