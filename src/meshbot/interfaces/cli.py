@@ -87,7 +87,10 @@ def main() -> None:
             device=settings.device,
         )
     defense_civil_worker = None
-    if settings.defense_civil.automatic_enabled:
+    if (
+        settings.features.defense_civil_monitor
+        and settings.defense_civil.automatic_enabled
+    ):
         defense_repository = SQLiteDefenseCivilAlertRepository(Path(settings.database_path))
         defense_state = DefenseCivilStateService(defense_repository)
         defense_delivery = DefenseCivilDelivery(
@@ -110,7 +113,7 @@ def main() -> None:
         night_start=settings.weather_night_start,
     )
     weather_bulletin_worker = None
-    if settings.weather_automatic_enabled:
+    if settings.features.weather_bulletin and settings.weather_automatic_enabled:
         weather_bulletin_worker = WeatherBulletinWorker(
             weather_service,
             transport,
@@ -124,22 +127,26 @@ def main() -> None:
         )
 
     user_service = UserService(user_repository)
-    command_handler = CommandHandler(
-        [
-            PingCommand(),
-            RegisterCommand(user_service),
-            NameCommand(user_service),
-            BlockCommand(moderation_service, moderation_notifier),
-            UnblockCommand(moderation_service, moderation_notifier),
-            SilenceCommand(moderation_service, moderation_notifier),
-            TempoCommand(weather_service),
+    commands = [
+        RegisterCommand(user_service),
+        NameCommand(user_service),
+        BlockCommand(moderation_service, moderation_notifier),
+        UnblockCommand(moderation_service, moderation_notifier),
+        SilenceCommand(moderation_service, moderation_notifier),
+    ]
+    if settings.features.ping:
+        commands.append(PingCommand())
+    if settings.features.weather_command:
+        commands.append(TempoCommand(weather_service))
+    if settings.features.defense_civil_command:
+        commands.append(
             DefenseCivilCommand(
                 DefenseCivilAlertService(settings.weather_timeout_seconds),
                 settings=settings.defense_civil,
-            ),
-        ],
-        prefix=settings.command_prefix,
-    )
+            )
+        )
+
+    command_handler = CommandHandler(commands, prefix=settings.command_prefix)
     bot = MeshBot(
         transport,
         command_handler,
