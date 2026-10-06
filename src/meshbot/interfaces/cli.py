@@ -1,7 +1,7 @@
 """Command-line interface for MeshBot."""
 
-from pathlib import Path
 import time
+from pathlib import Path
 
 from meshbot.application.authorization import AuthorizationPolicy
 from meshbot.application.bot import MeshBot
