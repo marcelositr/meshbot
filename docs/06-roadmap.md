@@ -28,6 +28,8 @@ Critério: nenhuma configuração deve prometer capacidade inexistente.
 
 ## P1 — transporte Meshtastic
 
+**Estado: implementado; validação de hardware real pendente.**
+
 Criar MeshtasticTransport atrás de MessageTransport.
 
 Responsabilidades:
@@ -49,6 +51,8 @@ O mesmo conjunto de comandos usado no simulador deve funcionar com o transporte 
 
 ## P1 — runtime de produção
 
+**Estado: implementado.**
+
 Composição explícita:
 
 ~~~text
@@ -59,6 +63,8 @@ production  -> MeshtasticTransport
 O runtime de produção não deve depender da CLI de desenvolvimento.
 
 ## P1 — observabilidade
+
+**Estado: implementado.**
 
 Implementar:
 
@@ -72,6 +78,8 @@ Implementar:
 O operador deve saber se o processo está vivo, conectado, recebendo, enviando e falhando.
 
 ## P2 — gateway Defesa Civil
+
+**Estado: implementação funcional concluída; refinamentos operacionais futuros.**
 
 Depois do transporte real:
 
@@ -102,6 +110,8 @@ Não usar a tabela users para isso.
 
 ## P3 — robustez
 
+**Estado: camada operacional principal implementada; evolução contínua.**
+
 Depois das funções centrais:
 
 - retry com backoff;
@@ -115,6 +125,8 @@ Depois das funções centrais:
 - documentação Linux.
 
 ## P3 — segurança
+
+**Estado: controles básicos implementados; endurecimento contínuo.**
 
 Reforçar:
 
@@ -165,23 +177,23 @@ Este conjunto formaliza o estado e as lacunas.
 
 ### Marco C — rádio real
 
-**Futuro.**
+**Implementação pronta; validação física pendente.**
 
-Primeiro grande salto operacional.
+O transporte Meshtastic já suporta USB, Wi-Fi e Bluetooth, incluindo recepção, envio, conexão, reconexão e shutdown. Falta validar com o hardware específico da instalação.
 
 ### Marco D — gateway Defesa Civil
 
-**Em implementação.**
+**Concluído na camada funcional.**
 
 A primeira camada persistente já está definida: alertas possuem armazenamento próprio, atualização por identificador e estado ativo/inativo. O sincronizador recebe um snapshot efetivo do feed e desativa alertas que deixaram de existir nele.
 
-Ainda faltam o consumo contínuo do feed, localização por geometria, fragmentação e transmissão automática.
+O consumo contínuo, estado persistente, deduplicação, atualização/cancelamento, expiração e transmissão automática já estão implementados. Ainda faltam refinamentos de geometria CAP, fragmentação específica para mensagens longas e uma outbox transacional para garantir recuperação de falhas de envio sem perda de evento.
 
 ### Marco E — operação contínua
 
-**Futuro.**
+**Implementação inicial concluída.**
 
-Supervisão, observabilidade, recuperação e operação de longo prazo.
+Supervisão de workers, retry com backoff, shutdown limpo, logging e exemplo de serviço systemd estão implementados. A outbox transacional, métricas externas e health endpoint permanecem refinamentos opcionais.
 
 ## Regra final
 
