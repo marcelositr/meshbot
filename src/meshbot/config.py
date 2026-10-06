@@ -52,7 +52,6 @@ class Settings:
     log_level: str
 
 
-_ALLOWED_ENVIRONMENTS = {"development", "production"}
 _ALLOWED_TRANSPORTS = {"simulator", "wifi", "bluetooth", "usb"}
 _ALLOWED_LOG_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR"}
 _ALLOWED_WEATHER_PROVIDERS = {"inmet"}
