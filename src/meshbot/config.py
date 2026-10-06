@@ -34,6 +34,9 @@ class Settings:
     weather_morning_start: str
     weather_afternoon_start: str
     weather_night_start: str
+    weather_automatic_enabled: bool
+    weather_location: str
+    weather_recipient_id: str
     defense_civil: DefenseCivilSettings
     log_level: str
 
@@ -109,6 +112,9 @@ def _build_settings(raw: dict[str, Any]) -> Settings:
             weather_morning_start=_required_string(periods, "morning_start"),
             weather_afternoon_start=_required_string(periods, "afternoon_start"),
             weather_night_start=_required_string(periods, "night_start"),
+            weather_automatic_enabled=_optional_bool(weather, "automatic_enabled", False),
+            weather_location=_optional_string_allow_empty(weather, "location", ""),
+            weather_recipient_id=_optional_string(weather, "recipient_id", "^all"),
             defense_civil=defense_civil,
             log_level=_required_string(raw, "log_level").upper(),
         )
@@ -202,6 +208,16 @@ def _validate(settings: Settings) -> None:
     if not 60 <= settings.defense_civil.max_message_length <= 1000:
         raise ConfigurationError(
             "defesa_civil.max_message_length must be between 60 and 1000."
+        )
+
+    if settings.weather_automatic_enabled and not settings.weather_location:
+        raise ConfigurationError(
+            "weather.location is required when automatic_enabled is true."
+        )
+
+    if settings.weather_automatic_enabled and not settings.weather_recipient_id:
+        raise ConfigurationError(
+            "weather.recipient_id is required when automatic_enabled is true."
         )
 
     for name, value in (
