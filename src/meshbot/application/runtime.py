@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from threading import Event
 from typing import Protocol
+
+logger = logging.getLogger(__name__)
 
 
 class BotRunner(Protocol):
@@ -44,9 +47,11 @@ class ProductionRuntime:
     def run(self, stop_event: Event | None = None) -> None:
         """Process messages until the stop event is set, then close transport."""
         event = stop_event or Event()
+        logger.info("Production runtime started.")
         try:
             while not event.is_set():
                 self._bot.process_next_message()
                 self._sleep(self._poll_interval_seconds)
         finally:
+            logger.info("Production runtime stopping; closing transport.")
             self._transport.close()
