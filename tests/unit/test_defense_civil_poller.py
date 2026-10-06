@@ -125,3 +125,54 @@ def test_run_polls_until_stop() -> None:
     poller.run(stop_event)
 
     assert feed.calls == 1
+
+
+def test_run_retries_failed_feed_with_bounded_backoff() -> None:
+    stop_event = Event()
+    repository = MemoryRepository()
+    calls = 0
+    sleeps: list[float] = []
+
+    class FlakyFeed(FakeFeed):
+        def get_all_alerts(self) -> tuple[DefenseCivilAlert, ...]:
+            nonlocal calls
+            calls += 1
+            if calls < 3:
+                raise RuntimeError("temporary failure")
+            stop_event.set()
+            return self.alerts
+
+    poller = DefenseCivilPoller(
+        FlakyFeed((make_alert("alert-1"),)),
+        DefenseCivilStateService(repository),
+        poll_interval_seconds=300,
+        sleep=sleeps.append,
+        retry_initial_delay_seconds=5,
+        retry_max_delay_seconds=10,
+    )
+
+    poller.run(stop_event)
+
+    assert calls == 3
+    assert sleeps == [5, 10]
+    assert repository.items["alert-1"][1]
+
+
+def test_rejects_invalid_retry_delays() -> None:
+    repository = MemoryRepository()
+    feed = FakeFeed(())
+
+    with pytest.raises(ValueError, match="retry_initial_delay_seconds"):
+        DefenseCivilPoller(
+            feed,
+            DefenseCivilStateService(repository),
+            retry_initial_delay_seconds=0,
+        )
+
+    with pytest.raises(ValueError, match="retry_max_delay_seconds"):
+        DefenseCivilPoller(
+            feed,
+            DefenseCivilStateService(repository),
+            retry_initial_delay_seconds=10,
+            retry_max_delay_seconds=5,
+        )
