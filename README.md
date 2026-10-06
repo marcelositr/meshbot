@@ -5,7 +5,7 @@ A modular bot for Meshtastic networks.
 MeshBot is designed to run in two environments:
 
 - **Development:** a local simulator that behaves like a small Meshtastic chat network.
-- **Production:** communication with real Meshtastic devices through supported transports.
+- **Production (planned):** communication with real Meshtastic devices through a future transport implementation.
 
 The bot core is intentionally independent from the transport and external services.
 
@@ -49,7 +49,7 @@ The `!tempo` command resolves municipalities through IBGE and accepts `Cidade/UF
 
 The `!defesacivil` command queries the official Defense Civil public alert feed for a municipality and reports the current active alerts. It is a read-only, on-demand query: each request is independent, and a previous response never suppresses a later query. CAP `Actual` alerts are considered, while `Update` and `Cancel` references are applied to the current feed before the response is built. Expired alerts are ignored. The response can be adapted through `defesa_civil.mode` (`normal`, `attention`, or `emergency`) and optional `show_*`, `max_alerts`, and `max_message_length` settings. The bot does not send automatic alerts.
 
-The `!registrar` command uses `!registrar <node_id>`. A registered user can set or replace their friendly display name with `!nome <nome>`. User names accept Unicode letters, numbers, and spaces, preserve uppercase/lowercase, normalize surrounding/repeated spaces, and reject punctuation, symbols, and emojis. Names are limited to 24 characters.
+The `!registrar` command registers the node that sent the message. A registered user can set or replace their friendly display name with `!nome <nome>`. User names accept Unicode letters, numbers, and spaces, preserve uppercase/lowercase, normalize surrounding/repeated spaces, and reject punctuation, symbols, and emojis. Names are limited to 24 characters.
 
 A user can register their own node with `!registrar`. Moderation commands such as `!bloquear`, `!desbloquear`, and `!silenciar` require administrator privileges. Administrators cannot moderate other administrators. `!silenciar` accepts an optional duration in minutes and otherwise uses `default_silence_minutes`.
 
