@@ -177,9 +177,9 @@ Este conjunto formaliza o estado e as lacunas.
 
 ### Marco C — rádio real
 
-**Implementação pronta; validação física pendente.**
+**Implementação concluída; validação física pendente.**
 
-O transporte Meshtastic já suporta USB, Wi-Fi e Bluetooth, incluindo recepção, envio, conexão, reconexão e shutdown. Falta validar com o hardware específico da instalação.
+O transporte Meshtastic já suporta USB, Wi-Fi e Bluetooth, incluindo recepção, envio, conexão, reconexão, tratamento de falhas e shutdown. A cobertura unitária é feita com interfaces simuladas; a única etapa dependente de hardware é a validação física da instalação.
 
 ### Marco D — gateway Defesa Civil
 
