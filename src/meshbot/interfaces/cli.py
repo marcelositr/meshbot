@@ -17,6 +17,7 @@ from meshbot.application.commands import (
 )
 from meshbot.application.moderation import ModerationService
 from meshbot.application.moderation_notifications import ModerationNotifier
+from meshbot.application.logging import configure_logging
 from meshbot.application.runtime import ProductionRuntime
 from meshbot.application.users import UserService
 from meshbot.config import ConfigurationError, load_settings
@@ -37,6 +38,8 @@ def main() -> None:
         settings = load_settings(config_path)
     except ConfigurationError as exc:
         raise SystemExit(f"Configuration error: {exc}") from exc
+
+    configure_logging(settings.log_level)
 
     def display_message(message: OutgoingMessage) -> None:
         print(f"{message.recipient_id} <- {message.text}")
