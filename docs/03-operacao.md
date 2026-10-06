@@ -1,142 +1,218 @@
 # Operação e configuração
 
-## Desenvolvimento
+## Instalação de desenvolvimento
 
-O ambiente de desenvolvimento deve usar:
+Requisitos:
 
-~~~text
-environment = development
-transport = simulator
-~~~
+- Python 3.13 ou superior;
+- ambiente virtual recomendado;
+- dependências de desenvolvimento para testes, Ruff e mypy.
 
-Instalação:
+Fluxo:
 
-~~~text
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 cp config/config.example.toml config/config.toml
 python3 -m meshbot
-~~~
+```
 
-config/config.toml não é versionado.
+O arquivo `config/config.toml` é local e não deve ser versionado.
+
+## Configuração principal
+
+O exemplo de configuração está organizado por seções para uso por pessoas que não precisam conhecer o código.
+
+### Features
+
+```toml
+[features]
+ping = true
+weather_command = true
+weather_bulletin = true
+defense_civil_command = true
+defense_civil_monitor = true
+```
+
+Essas cinco opções são opcionais. Cadastro, nomes e moderação continuam sempre disponíveis.
+
+### Ambiente e transporte
+
+```toml
+environment = "development"
+transport = "simulator"
+```
+
+Para desenvolvimento, os dois valores devem permanecer assim.
+
+Transportes Meshtastic disponíveis:
+
+- `usb`;
+- `wifi`;
+- `bluetooth`.
+
+### Administradores
+
+```toml
+admins = ["!12345678"]
+```
+
+Na inicialização, cada node configurado é criado como admin se ainda não existir ou promovido se existir com outro papel.
+
+### Banco
+
+Padrão:
+
+```text
+data/meshbot.db
+```
+
+O mesmo arquivo guarda usuários e estado dos alertas de Defesa Civil.
+
+### Moderação
+
+`default_silence_minutes` define a duração usada quando o admin não informa um tempo.
+
+### Log
+
+`log_level` aceita:
+
+- `DEBUG`;
+- `INFO`;
+- `WARNING`;
+- `ERROR`.
+
+### Mensagens
+
+`messaging.message_delay_seconds` controla o intervalo entre respostas consecutivas do mesmo processamento.
+
+O valor padrão do exemplo é 5 segundos.
+
+### Tempo
+
+Configura:
+
+- provider;
+- timeout;
+- início da manhã;
+- início da tarde;
+- início da noite;
+- boletim automático;
+- local;
+- destinatário.
+
+Hoje o único provider implementado é INMET.
+
+### Defesa Civil
+
+Configura:
+
+- habilitação da consulta;
+- modo;
+- quantidade máxima de alertas;
+- tamanho máximo;
+- campos exibidos;
+- monitoramento automático;
+- localização;
+- destino;
+- intervalo de polling.
 
 ## Simulador
 
-Entrada:
+A entrada é:
 
-~~~text
+```text
 <node_id> <mensagem>
-~~~
+```
 
 Exemplos:
 
-~~~text
+```text
 !12345678 !registrar
 !12345678 !nome Marcelo
 !12345678 !ping
-!12345678 !tempo Ituverava/SP
-!12345678 !defesacivil Ituverava/SP
-~~~
+!12345678 !tempo Ribeirão Preto/SP
+!12345678 !defesacivil Ribeirão Preto/SP
+```
 
-Desenvolvimento não deve abrir rádio real por acidente.
+A TUI aceita:
 
-## Banco
+- Enter;
+- backspace;
+- setas esquerda/direita;
+- Home/End;
+- Ctrl+C;
+- `exit`.
 
-Padrão: data/meshbot.db.
-
-É persistente, local e não versionado.
-
-Alterações de schema devem possuir migração compatível ou estratégia explícita.
-
-## Configurações
-
-Identidade: name, admins.
-
-Runtime: environment, transport, log_level.
-
-Meshtastic: channel_name, channel_index.
-
-Moderação: default_silence_minutes.
-
-Mensagens: command_prefix, message_delay_seconds.
-
-Tempo: weather.provider, weather.timeout_seconds e weather.periods.
-
-Defesa Civil: enabled, mode, max_alerts, max_message_length e show_*.
-
-## Observabilidade
-
-\`log_level\` é aplicado ao processo na inicialização. Os níveis aceitos são \`DEBUG\`, \`INFO\`, \`WARNING\` e \`ERROR\`.
-
-Em operação, os logs registram:
-- início e encerramento do runtime;
-- conexão, perda de conexão e reconexão do Meshtastic;
-- falhas de envio e de reconexão;
-- recebimento e envio de mensagens em nível \`DEBUG\`;
-- falhas de processamento.
-
-O conteúdo das mensagens não é colocado nos logs operacionais.
-
-O bot mantém contadores básicos em memória (\`received\`, \`processed\`, \`sent\`, \`rejected\`, \`failures\`) para diagnóstico e futura exposição por health/status ou métricas.
-
-## Transporte Meshtastic
-
-Os transportes \`usb\`, \`wifi\` e \`bluetooth\` possuem adaptador inicial.
-
-\`device\` é opcional:
-- USB: caminho da porta serial;
-- Wi-Fi: endereço do dispositivo;
-- Bluetooth: endereço Bluetooth.
-
-O ambiente de produção não deve assumir uma porta, IP ou endereço fixo.
-
-A integração atual recebe e envia mensagens, acompanha os eventos de conexão e tenta reconectar automaticamente com backoff.
+A TUI não bloqueia a interface durante o atraso entre respostas.
 
 ## Produção
 
-Antes de declarar produção pronta, devem existir:
+Quando o transporte não é `simulator`, a CLI cria `MeshtasticTransport` e `ProductionRuntime`.
 
-- conexão inicial e estado conectado/desconectado;
-- recepção;
-- envio;
-- reconexão automática;
-- timeout;
-- seleção de canal;
-- identificação do dispositivo;
-- shutdown limpo;
-- logs;
-- testes com hardware.
+Exemplo de configuração:
 
-## Operação segura
+```toml
+environment = "production"
+transport = "usb"
+device = "/dev/ttyUSB0"
+channel_index = 0
+```
 
-O sistema deve:
+Wi-Fi usa o endereço configurado em `device`; Bluetooth usa o endereço/nome aceito pelo adaptador Meshtastic.
 
-- falhar fechado na autorização;
-- não transmitir em desenvolvimento;
-- limitar entrada;
-- limitar resposta;
-- tratar falhas externas;
-- não expor traceback pelo rádio;
-- registrar diagnóstico;
-- evitar loops.
+A produção não deve ser declarada operacional apenas porque o processo inicia. É necessário validar o hardware real.
+
+## Serviço systemd
+
+Existe um exemplo em:
+
+```text
+deploy/meshbot.service.example
+```
+
+Ele executa:
+
+```text
+python -m meshbot
+```
+
+e reinicia o processo após falha.
+
+O arquivo é um exemplo; caminhos e usuário devem ser ajustados à instalação real.
+
+## Shutdown
+
+O runtime:
+
+1. sinaliza parada;
+2. aguarda workers;
+3. fecha o transporte;
+4. registra o encerramento.
+
+O transporte Meshtastic remove seus callbacks e fecha a interface.
 
 ## Serviços externos
 
-IBGE, INMET e CAP podem falhar.
+IBGE, INMET e CAP são dependências de rede.
 
-Uma falha externa não deve derrubar o processo inteiro. O rádio recebe uma mensagem curta; o log preserva diagnóstico.
+Falhas devem:
 
-## Gateway Defesa Civil
+- ser convertidas em erro controlado;
+- gerar resposta curta quando aplicável;
+- registrar diagnóstico;
+- não derrubar o processo principal.
 
-O estado dos alertas é separado do cadastro de usuários e persistido em SQLite. Cada alerta é identificado pelo `identifier` oficial do CAP e mantém seu conteúdo, referências, expiração e estado ativo/inativo.
+## Operação segura
 
-A sincronização trabalha sobre um snapshot efetivo: alertas presentes são atualizados e marcados como ativos; alertas anteriormente ativos que desapareceram do snapshot são marcados como inativos. Isso prepara a aplicação para tratar atualização, cancelamento e expiração sem depender do comando `!defesacivil`.
+Antes de usar rádio real:
 
-O gateway contínuo ainda precisa conectar essa camada a uma leitura periódica do feed e, posteriormente, à localização e transmissão automática.
+- confirmar `transport`;
+- confirmar `device`;
+- confirmar `channel_index`;
+- confirmar destinatários de automações;
+- manter features automáticas desligadas durante testes iniciais;
+- validar a identificação do node;
+- testar primeiro mensagens simples.
 
-## Futuro serviço contínuo
-
-O gateway deverá ter processo supervisionado, reinício, logs, health/status, métricas, backoff e estado persistente.
-
-systemd é uma opção natural no Linux, mas não deve contaminar a lógica da aplicação.
